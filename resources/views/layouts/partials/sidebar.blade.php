@@ -69,10 +69,10 @@
 
         if ($peopleOpen) {
             $defaultOpenMenu = 'people';
-        } elseif ($socialWorkersOpen) {
-            $defaultOpenMenu = 'social-workers';
         } elseif ($guardiansOpen) {
             $defaultOpenMenu = 'guardians';
+        } elseif ($socialWorkersOpen) {
+            $defaultOpenMenu = 'social-workers';
         } elseif ($servicesOpen) {
             $defaultOpenMenu = 'services';
         } elseif ($reportsOpen) {
@@ -107,15 +107,15 @@
                 ['section' => 'beneficiary-case-file', 'label' => 'پرونده مددجو', 'icon' => 'fa fa-folder-open', 'visible' => $user?->can('full-access')],
                 ['section' => 'people-edit-field', 'label' => 'ویرایش فیلد تکی', 'icon' => 'fa fa-pencil-square-o', 'active' => ['people-edit-field', 'people-edit-field-need-level'], 'visible' => $user?->can('people-edit')],
             ],
+            'guardians' => [
+                ['section' => 'guardians-list', 'label' => 'لیست سرپرستان'],
+                ['section' => 'guardians-block-list', 'label' => 'سرپرستان غیرفعال'],
+            ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
                 ['section' => 'social-worker-attendance-monitor', 'label' => 'پایش حضور و غیاب'],
                 ['section' => 'social-worker-create', 'label' => 'ثبت مددکار جدید'],
                 ['section' => 'social-workers-block-list', 'label' => 'مددکاران غیرفعال'],
-            ],
-            'guardians' => [
-                ['section' => 'guardians-list', 'label' => 'لیست سرپرستان'],
-                ['section' => 'guardians-block-list', 'label' => 'سرپرستان غیرفعال'],
             ],
             'services' => [
                 ['section' => 'service-list', 'label' => 'مدیریت خدمات'],
@@ -243,6 +243,62 @@
             </div>
         @endif
 
+        @can('full-access')
+            @if($dashboardMode)
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'guardians' ? '' : 'guardians'"
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['guardians-list', 'guardians-block-list']) ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4"
+                                      d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6 3 3 0 000 6zM5 12a3 3 0 100-6 3 3 0 000 6z"></path>
+                            </svg>
+                            <span>سرپرستان</span>
+                        </div>
+                        <svg :class="openMenu === 'guardians' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'guardians'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        @foreach($dashboardMenuItems['guardians'] as $item)
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'guardians' ? '' : 'guardians'"
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('guardians.*') ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6 3 3 0 000 6zM5 12a3 3 0 100-6 3 3 0 000 6z"></path>
+                            </svg>
+                            <span>سرپرستان</span>
+                        </div>
+                        <svg :class="openMenu === 'guardians' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'guardians'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        <a href="{{ route('guardians.index') }}"
+                           class="block px-4 py-2 text-sm {{ request()->routeIs('guardians.index') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست
+                            سرپرستان</a>
+                        <a href="{{ route('guardians.block-list') }}"
+                           class="block px-4 py-2 text-sm {{ request()->routeIs('guardians.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک
+                            لیست سرپرستان</a>
+                    </div>
+                </div>
+            @endif
+        @endcan
+
         @can('manage-social-workers')
             @if($dashboardMode)
                 <div>
@@ -303,60 +359,6 @@
         @endcan
 
         @can('full-access')
-            @if($dashboardMode)
-                <div>
-                    <button type="button" @click="openMenu = openMenu === 'guardians' ? '' : 'guardians'"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['guardians-list', 'guardians-block-list']) ? 'bg-indigo-700' : '' }}">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4"
-                                      d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6 3 3 0 000 6zM5 12a3 3 0 100-6 3 3 0 000 6z"></path>
-                            </svg>
-                            <span>سرپرستان</span>
-                        </div>
-                        <svg :class="openMenu === 'guardians' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div x-show="openMenu === 'guardians'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        @foreach($dashboardMenuItems['guardians'] as $item)
-                            <x-sidebar.dashboard-section-button
-                                :section="$item['section']"
-                                :active="$isActive($item['active'] ?? $item['section'])"
-                            >
-                                {{ $item['label'] }}
-                            </x-sidebar.dashboard-section-button>
-                        @endforeach
-                    </div>
-                </div>
-            @else
-                <div>
-                    <button type="button" @click="openMenu = openMenu === 'guardians' ? '' : 'guardians'"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('guardians.*') ? 'bg-indigo-700' : '' }}">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6 3 3 0 000 6zM5 12a3 3 0 100-6 3 3 0 000 6z"></path>
-                            </svg>
-                            <span>سرپرستان</span>
-                        </div>
-                        <svg :class="openMenu === 'guardians' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div x-show="openMenu === 'guardians'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <a href="{{ route('guardians.index') }}"
-                           class="block px-4 py-2 text-sm {{ request()->routeIs('guardians.index') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست
-                            سرپرستان</a>
-                        <a href="{{ route('guardians.block-list') }}"
-                           class="block px-4 py-2 text-sm {{ request()->routeIs('guardians.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک
-                            لیست سرپرستان</a>
-                    </div>
-                </div>
-            @endif
-
             @if($dashboardMode)
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'services' ? '' : 'services'"
