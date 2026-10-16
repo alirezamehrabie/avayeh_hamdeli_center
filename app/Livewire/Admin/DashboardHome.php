@@ -124,6 +124,8 @@ class DashboardHome extends Component
             $this->activeSection = 'special-features-print-client-card';
         } elseif (! request()->has('section') && request()->routeIs('admin.people.case-file', 'people.case-file')) {
             $this->activeSection = 'beneficiary-case-file';
+        } elseif (! request()->has('section') && request()->routeIs('admin.social-workers.announcements')) {
+            $this->activeSection = 'social-worker-announcements';
         }
         $this->normalizeActiveSection();
         $this->syncSectionContext();
@@ -281,6 +283,7 @@ class DashboardHome extends Component
                 'social-worker-create',
                 'social-worker-edit',
                 'social-worker-attendance-monitor',
+                'social-worker-announcements',
                 'guardians-list',
                 'guardians-block-list',
                 'guardian-edit',

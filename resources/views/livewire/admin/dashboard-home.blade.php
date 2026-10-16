@@ -392,6 +392,10 @@
                         <livewire:admin.attendance-monitor :embedded="true" :key="'social-worker-attendance-monitor'" />
                         @break
 
+                    @case('social-worker-announcements')
+                        <livewire:social-workers.mandatory-announcements-manager :embedded="true" :key="'social-worker-announcements'" />
+                        @break
+
                     @case('guardians-list')
                         <livewire:guardians.index-guardians :embedded="true" :key="'guardians-list'" />
                         @break

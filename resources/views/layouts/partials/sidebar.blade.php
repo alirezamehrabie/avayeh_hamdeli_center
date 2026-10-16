@@ -52,7 +52,7 @@
         $activeSection = $activeSection ?? null;
         $isActive = fn ($sections) => in_array($activeSection, (array) $sections, true);
         $peopleOpen = $dashboardMode ? $isActive(['people-fast-create', 'people-list', 'people-incomplete-cases', 'people-block-list', 'person-create', 'person-edit', 'beneficiary-case-file', 'people-edit-field', 'people-edit-field-need-level']) : request()->routeIs('people.*');
-        $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit', 'social-worker-attendance-monitor']) : request()->routeIs('social-workers.*');
+        $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit', 'social-worker-attendance-monitor', 'social-worker-announcements']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-delivery-social-worker', 'service-delivery-beneficiary', 'service-archive']) : false;
@@ -113,6 +113,7 @@
             ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
+                ['section' => 'social-worker-announcements', 'label' => 'بخشنامه‌ها و پیام‌های الزامی', 'icon' => 'fa fa-bullhorn'],
                 ['section' => 'social-worker-attendance-monitor', 'label' => 'پایش حضور و غیاب'],
                 ['section' => 'social-worker-create', 'label' => 'ثبت مددکار جدید'],
                 ['section' => 'social-workers-block-list', 'label' => 'مددکاران غیرفعال'],
