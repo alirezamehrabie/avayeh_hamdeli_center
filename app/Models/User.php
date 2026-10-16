@@ -666,6 +666,11 @@ class User extends Authenticatable
         return $this->belongsTo(SocialWorker::class);
     }
 
+    public function mandatoryAnnouncementRecipients(): HasMany
+    {
+        return $this->hasMany(MandatoryAnnouncementRecipient::class);
+    }
+
     public function sponsorProfile(): HasOne
     {
         return $this->hasOne(SponsorProfile::class);
