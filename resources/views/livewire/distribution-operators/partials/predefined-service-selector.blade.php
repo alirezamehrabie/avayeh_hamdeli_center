@@ -9,13 +9,121 @@
         x-data="{
             open: false,
             historyActive: false,
+            popStateHandler: null,
+            mediaQuery: null,
+            mediaQueryHandler: null,
+            viewportSyncHandler: null,
+            scrollLocked: false,
+            viewportHeight: window.innerHeight,
+            viewportOffsetTop: 0,
             search: @entangle('serviceSearch').live,
             get isMobileSheet() {
-                return window.matchMedia('(max-width: 639px)').matches;
+                return this.mediaQuery?.matches ?? window.matchMedia('(max-width: 639px)').matches;
+            },
+            get keyboardInset() {
+                return Math.max(0, window.innerHeight - (this.viewportHeight + this.viewportOffsetTop));
+            },
+            get mobileSheetStyle() {
+                if (! this.isMobileSheet) {
+                    return '';
+                }
+                const maxHeight = Math.max(280, this.viewportHeight - 16);
+                return `transform: translateY(-${this.keyboardInset}px); max-height: ${maxHeight}px;`;
+            },
+            init() {
+                this.mediaQuery = window.matchMedia('(max-width: 639px)');
+                this.popStateHandler = () => this.handleSelectorPopState();
+                this.mediaQueryHandler = () => this.syncPageScrollLock(this.open);
+                this.viewportSyncHandler = () => this.syncViewport();
+
+                window.addEventListener('popstate', this.popStateHandler);
+                window.addEventListener('resize', this.viewportSyncHandler);
+                if (this.mediaQuery.addEventListener) {
+                    this.mediaQuery.addEventListener('change', this.mediaQueryHandler);
+                } else {
+                    this.mediaQuery.addListener?.(this.mediaQueryHandler);
+                }
+
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', this.viewportSyncHandler);
+                    window.visualViewport.addEventListener('scroll', this.viewportSyncHandler);
+                }
+
+                this.syncViewport();
+
+                window.addEventListener('open-predefined-service-selector', () => {
+                    this.openSelector();
+                });
+
+                this.$watch('open', (value) => this.syncPageScrollLock(value));
+            },
+            destroy() {
+                if (this.popStateHandler) {
+                    window.removeEventListener('popstate', this.popStateHandler);
+                }
+                if (this.viewportSyncHandler) {
+                    window.removeEventListener('resize', this.viewportSyncHandler);
+                }
+                if (this.mediaQueryHandler) {
+                    if (this.mediaQuery?.removeEventListener) {
+                        this.mediaQuery.removeEventListener('change', this.mediaQueryHandler);
+                    } else {
+                        this.mediaQuery?.removeListener?.(this.mediaQueryHandler);
+                    }
+                }
+                if (window.visualViewport && this.viewportSyncHandler) {
+                    window.visualViewport.removeEventListener('resize', this.viewportSyncHandler);
+                    window.visualViewport.removeEventListener('scroll', this.viewportSyncHandler);
+                }
+                this.releasePageScrollLock();
+                this.historyActive = false;
+            },
+            syncViewport() {
+                if (window.visualViewport) {
+                    this.viewportHeight = window.visualViewport.height;
+                    this.viewportOffsetTop = window.visualViewport.offsetTop;
+                    return;
+                }
+                this.viewportHeight = window.innerHeight;
+                this.viewportOffsetTop = 0;
+            },
+            syncPageScrollLock(shouldLock) {
+                if (shouldLock && this.isMobileSheet) {
+                    this.lockPageScroll();
+                    return;
+                }
+                this.releasePageScrollLock();
+            },
+            lockPageScroll() {
+                if (this.scrollLocked) {
+                    return;
+                }
+                const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+                document.documentElement.dataset.distributionOperatorSheetLocks = String(currentLocks + 1);
+                document.documentElement.classList.add('overflow-hidden');
+                this.scrollLocked = true;
+            },
+            releasePageScrollLock() {
+                if (! this.scrollLocked) {
+                    return;
+                }
+                const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+                const remainingLocks = Math.max(0, currentLocks - 1);
+                if (remainingLocks > 0) {
+                    document.documentElement.dataset.distributionOperatorSheetLocks = String(remainingLocks);
+                } else {
+                    delete document.documentElement.dataset.distributionOperatorSheetLocks;
+                    document.documentElement.classList.remove('overflow-hidden');
+                }
+                this.scrollLocked = false;
             },
             openSelector() {
                 this.open = true;
+                this.syncViewport();
                 this.pushSelectorHistory();
+                if (! this.isMobileSheet) {
+                    this.$nextTick(() => this.$refs.serviceSearch?.focus({ preventScroll: true }));
+                }
             },
             closeSelector({ syncHistory = true } = {}) {
                 const shouldRestoreHistory = syncHistory && this.historyActive;
@@ -65,15 +173,6 @@
                 $wire.clearPredefinedServiceSelection();
             },
         }"
-        x-init="
-            window.addEventListener('popstate', () => handleSelectorPopState());
-            window.addEventListener('open-predefined-service-selector', () => {
-                openSelector();
-            });
-            $watch('open', (value) => {
-                document.documentElement.classList.toggle('overflow-hidden', value && isMobileSheet);
-            });
-        "
         x-on:keydown.escape.window="closeSelector()"
     >
         @if($compact)
@@ -139,12 +238,17 @@
             x-transition:leave-start="translate-y-0 opacity-100"
             x-transition:leave-end="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
             @click.outside="closeSelector()"
-            class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:absolute sm:inset-auto sm:mt-2 sm:max-h-96 sm:w-full sm:rounded-2xl sm:p-2 sm:shadow-xl"
+            :style="isMobileSheet ? mobileSheetStyle : ''"
+            class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] transition-[transform,max-height] duration-100 ease-out sm:absolute sm:inset-auto sm:mt-2 sm:max-h-96 sm:w-full sm:rounded-2xl sm:p-2 sm:shadow-xl sm:transition-none"
             dir="rtl"
             role="dialog"
             aria-modal="true"
+            aria-label="انتخاب خدمت"
             style="display: none;"
         >
+            <!-- Mobile drag handle pill -->
+            <div class="mx-auto mb-2.5 h-1.5 w-12 shrink-0 rounded-full bg-slate-300 sm:hidden" aria-hidden="true"></div>
+
             <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3 sm:hidden">
                 <div class="min-w-0">
                     <h3 class="text-sm font-black text-slate-800">انتخاب خدمت</h3>
@@ -153,26 +257,59 @@
                 <button
                     type="button"
                     @click="closeSelector()"
-                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200 active:scale-95"
                     aria-label="بستن"
                 >
-                    <span aria-hidden="true">×</span>
+                    <i class="bi bi-x-lg text-sm"></i>
                 </button>
             </div>
 
-            <div class="sticky top-0 z-10 bg-slate-50 pb-2">
+            <div wire:ignore.self class="sticky top-0 z-10 bg-slate-50 pb-2">
                 <div class="relative">
                     <input
                         type="search"
                         x-ref="serviceSearch"
                         x-model.debounce.250ms="search"
-                        class="min-h-11 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                        inputmode="search"
+                        enterkeyhint="search"
+                        class="min-h-11 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
                         placeholder="جستجو بر اساس نام، کد یا دسته‌بندی"
                         autocomplete="off"
                     >
-                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/>
-                    </svg>
+                    <!-- Loading Indicator -->
+                    <span
+                        wire:loading.delay
+                        wire:target="serviceSearch"
+                        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-cyan-600"
+                    >
+                        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                    </span>
+                    <!-- Clear search button -->
+                    <button
+                        type="button"
+                        x-show="search && search.length > 0"
+                        wire:loading.remove
+                        wire:target="serviceSearch"
+                        @click="search = ''; $refs.serviceSearch?.focus()"
+                        class="absolute left-2.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-300 active:scale-95"
+                        aria-label="پاک کردن متن جستجو"
+                    >
+                        <i class="bi bi-x text-sm leading-none"></i>
+                    </button>
+                    <!-- Search Icon (when idle and empty) -->
+                    <span
+                        x-show="! search || search.length === 0"
+                        wire:loading.remove
+                        wire:target="serviceSearch"
+                        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
 

@@ -1,7 +1,7 @@
 @php
     $accent = $accent ?? 'cyan';
     $selectorId = $selectorId ?? 'social-worker-selector';
-    $keyboardAwareMobileSheet = $keyboardAwareMobileSheet ?? false;
+    $keyboardAwareMobileSheet = $keyboardAwareMobileSheet ?? true;
     $isEmerald = $accent === 'emerald';
     $accentClasses = $isEmerald
         ? [
@@ -184,6 +184,9 @@
                 this.pushSelectorHistory();
             },
             focusWorkerSearch() {
+                if (this.isMobileSheet) {
+                    return;
+                }
                 this.$nextTick(() => {
                     this.$refs.workerSearch?.focus({ preventScroll: true });
                     this.$refs.workerSearch?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -295,7 +298,7 @@
             x-transition:leave-start="translate-y-0 opacity-100"
             x-transition:leave-end="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
             @click.outside="closeSelector()"
-            class="fixed inset-x-0 bottom-0 z-50 flex max-h-[86svh] min-h-[48svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:absolute sm:inset-auto sm:mt-2 sm:min-h-0 sm:max-h-[30rem] sm:w-full sm:rounded-2xl sm:p-2 sm:shadow-xl"
+            class="fixed inset-x-0 bottom-0 z-50 flex max-h-[86svh] min-h-[48svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] transition-[transform,max-height] duration-100 ease-out sm:absolute sm:inset-auto sm:mt-2 sm:min-h-0 sm:max-h-[30rem] sm:w-full sm:rounded-2xl sm:p-2 sm:shadow-xl sm:transition-none"
             dir="rtl"
             role="dialog"
             aria-modal="true"
@@ -303,6 +306,9 @@
             x-bind:style="mobileSheetStyle"
             style="display: none;"
         >
+            <!-- Mobile drag handle pill -->
+            <div class="mx-auto mb-2.5 h-1.5 w-12 shrink-0 rounded-full bg-slate-300 sm:hidden" aria-hidden="true"></div>
+
             <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3 sm:hidden">
                 <div class="min-w-0">
                     <h3 class="text-sm font-black text-slate-800">انتخاب مددکار</h3>
@@ -313,25 +319,56 @@
                 <button
                     type="button"
                     @click="closeSelector()"
-                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200 active:scale-95"
                     aria-label="بستن انتخاب مددکار"
                 >
                     <i class="bi bi-x-lg text-sm"></i>
                 </button>
             </div>
 
-            <div class="sticky top-0 z-10 bg-slate-50 pb-2">
+            <div wire:ignore.self class="sticky top-0 z-10 bg-slate-50 pb-2">
                 <div class="relative">
                     <input
                         type="search"
                         x-ref="workerSearch"
                         x-model.debounce.250ms="search"
+                        inputmode="search"
+                        enterkeyhint="search"
                         @focus="$wire.set('showSocialWorkerSuggestions', true); syncViewport()"
                         class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }}"
                         placeholder="نام، کد مددکار یا موبایل"
                         autocomplete="off"
                     >
-                    <i class="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
+                    <!-- Loading Indicator -->
+                    <span
+                        wire:loading.delay
+                        wire:target="socialWorkerQuery, set('showSocialWorkerSuggestions'"
+                        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 {{ $accentClasses['icon'] }}"
+                    >
+                        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                    </span>
+                    <!-- Clear search button -->
+                    <button
+                        type="button"
+                        x-show="search && search.length > 0"
+                        wire:loading.remove
+                        wire:target="socialWorkerQuery, set('showSocialWorkerSuggestions'"
+                        @click="search = ''; $refs.workerSearch?.focus()"
+                        class="absolute left-2.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-300 active:scale-95"
+                        aria-label="پاک کردن متن جستجو"
+                    >
+                        <i class="bi bi-x text-sm leading-none"></i>
+                    </button>
+                    <!-- Search Icon (when idle and empty) -->
+                    <i
+                        x-show="! search || search.length === 0"
+                        wire:loading.remove
+                        wire:target="socialWorkerQuery, set('showSocialWorkerSuggestions'"
+                        class="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"
+                    ></i>
                 </div>
             </div>
 
