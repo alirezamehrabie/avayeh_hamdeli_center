@@ -74,7 +74,7 @@ class MandatoryAnnouncementsManager extends Component
                 || auth()->user()->can('access-admin-panel')
             ),
             403,
-            'شما اجازه دسترسی به مدیریت بخشنامه‌های مددکاران را ندارید.'
+            'شما اجازه دسترسی به مدیریت پیام‌های مددکاران را ندارید.'
         );
     }
 
@@ -123,7 +123,7 @@ class MandatoryAnnouncementsManager extends Component
                 Rule::requiredIf($this->targetType === MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS),
                 function ($attribute, $value, $fail) {
                     if ($this->targetType === MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS && empty($value)) {
-                        $fail('حداقل باید یک مددکار اجتماعی برای دریافت بخشنامه انتخاب شود.');
+                        $fail('حداقل باید یک مددکار اجتماعی برای دریافت پیام انتخاب شود.');
                     }
                 },
             ],
@@ -139,8 +139,8 @@ class MandatoryAnnouncementsManager extends Component
     protected function validationAttributes(): array
     {
         return [
-            'title' => 'عنوان بخشنامه',
-            'body' => 'متن پیام یا بخشنامه',
+            'title' => 'عنوان پیام',
+            'body' => 'متن پیام',
             'priority' => 'سطح اولویت',
             'targetType' => 'دامنه مخاطبان',
             'selectedSocialWorkerIds' => 'مددکاران منتخب',
@@ -179,7 +179,7 @@ class MandatoryAnnouncementsManager extends Component
         $this->minReadingSeconds = 5;
 
         $this->activeTab = 'list';
-        session()->flash('success', 'بخشنامه با موفقیت ثبت و به حساب مددکاران مربوطه ابلاغ شد.');
+        session()->flash('success', 'پیام با موفقیت ثبت و به حساب مددکاران مربوطه ابلاغ شد.');
     }
 
     public function deleteAnnouncement(int $announcementId): void
@@ -196,7 +196,7 @@ class MandatoryAnnouncementsManager extends Component
             $this->closeAuditModal();
         }
 
-        session()->flash('success', 'بخشنامه مورد نظر با موفقیت حذف گردید.');
+        session()->flash('success', 'پیام مورد نظر با موفقیت حذف گردید.');
     }
 
     public function openAuditModal(int $announcementId): void

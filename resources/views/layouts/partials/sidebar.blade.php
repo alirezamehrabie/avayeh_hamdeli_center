@@ -113,7 +113,7 @@
             ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
-                ['section' => 'social-worker-announcements', 'label' => 'ابلاغ پیام و بخشنامه‌ها', 'icon' => 'fa fa-bullhorn'],
+                ['section' => 'social-worker-announcements', 'label' => 'ابلاغ پیام‌ها', 'icon' => 'fa fa-bullhorn'],
                 ['section' => 'social-worker-attendance-monitor', 'label' => 'پایش حضور و غیاب'],
                 ['section' => 'social-worker-create', 'label' => 'ثبت مددکار جدید'],
                 ['section' => 'social-workers-block-list', 'label' => 'مددکاران غیرفعال'],

@@ -7,34 +7,51 @@
                     <i class="fa fa-bullhorn text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-extrabold text-slate-800 sm:text-2xl">بخشنامه‌ها و پیام‌های الزامی مدیریت</h1>
+                    <h1 class="text-xl font-extrabold text-slate-800 sm:text-2xl">پیام‌های الزامی مدیریت</h1>
                     <p class="mt-1 text-xs text-slate-500 sm:text-sm">
                         ابلاغ پیام، دستورالعمل‌ها، اطلاع‌رسانی به مددکاران اجتماعی
                     </p>
                 </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-                <button
-                    type="button"
-                    wire:click="switchTab('list')"
-                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition sm:text-sm {{ $activeTab === 'list' ? 'bg-cyan-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50' }}"
-                >
-                    <i class="fa fa-list"></i>
-                    <span>لیست و تاریخچه بخشنامه‌ها</span>
-                    <span class="rounded-full px-2 py-0.5 text-xs {{ $activeTab === 'list' ? 'bg-cyan-700 text-white' : 'bg-slate-100 text-slate-600' }}">
-                        {{ $announcements->total() }}
-                    </span>
-                </button>
+            <div class="flex flex-wrap items-center gap-2.5">
+                @if ($activeTab === 'list')
+                    {{-- شمارنده و وضعیت تاریخچه پیام‌ها --}}
+                    <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-sm sm:text-sm">
+                        <i class="fa fa-list text-slate-400"></i>
+                        <span>تاریخچه پیام‌ها:</span>
+                        <span class="rounded-full bg-cyan-50 px-2 py-0.5 text-xs font-extrabold text-cyan-700 border border-cyan-100">
+                            {{ $announcements->total() }}
+                        </span>
+                    </div>
 
-                <button
-                    type="button"
-                    wire:click="switchTab('create')"
-                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition sm:text-sm {{ $activeTab === 'create' ? 'bg-cyan-600 text-white shadow-sm' : 'border border-cyan-300 bg-cyan-50 text-cyan-800 hover:bg-cyan-100' }}"
-                >
-                    <i class="fa fa-plus-circle"></i>
-                    <span>ثبت بخشنامه جدید</span>
-                </button>
+                    {{-- دکمه شاخص، چشم‌نواز و دارای اولویت بالا برای ثبت پیام جدید --}}
+                    <button
+                        type="button"
+                        wire:click="switchTab('create')"
+                        class="group relative inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-l from-cyan-600 via-sky-600 to-cyan-700 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-cyan-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-600/40 focus:outline-none focus:ring-4 focus:ring-cyan-200 active:translate-y-0 sm:text-sm"
+                    >
+                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 text-white transition-transform duration-200 group-hover:scale-110 group-hover:bg-white/30">
+                            <i class="fa fa-plus text-xs"></i>
+                        </span>
+                        <span class="tracking-wide">ثبت پیام جدید</span>
+                    </button>
+                @else
+                    {{-- دکمه بازگشت به لیست پیام‌ها --}}
+                    <button
+                        type="button"
+                        wire:click="switchTab('list')"
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:text-sm"
+                    >
+                        <i class="fa fa-arrow-right text-slate-500"></i>
+                        <span>بازگشت به لیست پیام‌ها</span>
+                    </button>
+
+                    <div class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-cyan-600 to-sky-700 px-4 py-2.5 text-xs font-black text-white shadow-sm sm:text-sm">
+                        <i class="fa fa-pen-fancy text-cyan-200"></i>
+                        <span>فرم ثبت پیام جدید</span>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -54,7 +71,7 @@
         </div>
     @endif
 
-    {{-- تب اول: لیست بخشنامه‌ها --}}
+    {{-- تب اول: لیست پیام‌ها --}}
     @if ($activeTab === 'list')
         <div class="space-y-4">
             {{-- فیلترها و جستجو --}}
@@ -63,7 +80,7 @@
                     <input
                         type="text"
                         wire:model.live.debounce.350ms="search"
-                        placeholder="جستجو در عنوان یا متن بخشنامه‌ها..."
+                        placeholder="جستجو در عنوان یا متن پیام‌ها..."
                         class="w-full rounded-xl border border-slate-300 bg-slate-50/50 py-2.5 pl-4 pr-10 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100"
                     />
                     <i class="fa fa-search absolute right-3.5 top-3.5 text-slate-400"></i>
@@ -98,22 +115,22 @@
                     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                         <i class="fa fa-bullhorn text-2xl"></i>
                     </div>
-                    <h3 class="mt-4 text-base font-bold text-slate-700">هیچ بخشنامه‌ای یافت نشد</h3>
+                    <h3 class="mt-4 text-base font-bold text-slate-700">هیچ پیامی یافت نشد</h3>
                     <p class="mt-1 text-xs text-slate-500 sm:text-sm">
                         @if ($search !== '' || $priorityFilter !== 'all')
                             با توجه به فیلترهای جستجو موردی پیدا نشد. می‌توانید فیلترها را پاک کنید.
                         @else
-                            تاکنون بخشنامه یا پیام الزامی ثبت نشده است. می‌توانید با کلیک روی «ثبت بخشنامه جدید» اقدام کنید.
+                            تاکنون پیام الزامی ثبت نشده است. می‌توانید با کلیک روی «ثبت پیام جدید» اقدام کنید.
                         @endif
                     </p>
                     @if ($search === '' && $priorityFilter === 'all')
                         <button
                             type="button"
                             wire:click="switchTab('create')"
-                            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-xs font-bold text-white shadow transition hover:bg-cyan-700 sm:text-sm"
+                            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-cyan-600 via-sky-600 to-cyan-700 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-cyan-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-600/40 focus:outline-none focus:ring-4 focus:ring-cyan-200 active:translate-y-0 sm:text-sm"
                         >
-                            <i class="fa fa-plus-circle"></i>
-                            ثبت اولین بخشنامه
+                            <i class="fa fa-plus-circle text-sm sm:text-base"></i>
+                            <span>ثبت اولین پیام</span>
                         </button>
                     @endif
                 </div>
@@ -191,7 +208,7 @@
                                     </div>
                                 </div>
 
-                                {{-- عنوان و متن بخشنامه --}}
+                                {{-- عنوان و متن پیام --}}
                                 <div>
                                     <h2 class="text-base font-extrabold text-slate-800 sm:text-lg">
                                         {{ $announcement->title }}
@@ -241,9 +258,9 @@
                                         <button
                                             type="button"
                                             wire:click="deleteAnnouncement({{ $announcement->id }})"
-                                            wire:confirm="آیا از حذف این بخشنامه و تمامی تاییدیه‌های آن اطمینان دارید؟ این عمل غیرقابل برگشت است."
+                                            wire:confirm="آیا از حذف این پیام و تمامی تاییدیه‌های آن اطمینان دارید؟ این عمل غیرقابل برگشت است."
                                             class="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
-                                            title="حذف بخشنامه"
+                                            title="حذف پیام"
                                         >
                                             <i class="fa fa-trash"></i>
                                             <span>حذف</span>
@@ -263,14 +280,14 @@
         </div>
     @endif
 
-    {{-- تب دوم: فرم ایجاد بخشنامه جدید --}}
+    {{-- تب دوم: فرم ایجاد پیام جدید --}}
     @if ($activeTab === 'create')
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div class="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                    <h2 class="text-lg font-extrabold text-slate-800 sm:text-xl">ثبت و ابلاغ بخشنامه جدید به مددکاران</h2>
+                    <h2 class="text-lg font-extrabold text-slate-800 sm:text-xl">ثبت و ابلاغ پیام جدید به مددکاران</h2>
                     <p class="mt-1 text-xs text-slate-500 sm:text-sm">
-                        این بخشنامه در زمان ورود مددکار به پنل خود به صورت خودکار و مسدودکننده نمایش داده خواهد شد.
+                        این پیام در زمان ورود مددکار به پنل خود به صورت خودکار و مسدودکننده نمایش داده خواهد شد.
                     </p>
                 </div>
                 <button
@@ -283,10 +300,10 @@
             </div>
 
             <form wire:submit.prevent="saveAnnouncement" class="space-y-6">
-                {{-- عنوان بخشنامه --}}
+                {{-- عنوان پیام --}}
                 <div>
                     <label class="mb-2 block text-xs font-bold text-slate-700 sm:text-sm">
-                        عنوان بخشنامه / پیام مدیریت <span class="text-rose-500">*</span>
+                        عنوان پیام مدیریت <span class="text-rose-500">*</span>
                     </label>
                     <input
                         type="text"
@@ -302,7 +319,7 @@
                 {{-- سطح اولویت --}}
                 <div>
                     <label class="mb-2 block text-xs font-bold text-slate-700 sm:text-sm">
-                        سطح اولویت بخشنامه <span class="text-rose-500">*</span>
+                        سطح اولویت پیام <span class="text-rose-500">*</span>
                     </label>
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         <label class="relative flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition {{ $priority === \App\Models\MandatoryAnnouncement::PRIORITY_NORMAL ? 'border-blue-400 bg-blue-50/50 ring-2 ring-blue-200' : 'border-slate-200 hover:bg-slate-50' }}">
@@ -352,12 +369,12 @@
                 {{-- متن پیام --}}
                 <div>
                     <label class="mb-2 block text-xs font-bold text-slate-700 sm:text-sm">
-                        متن بخشنامه / توضیحات کامل <span class="text-rose-500">*</span>
+                        متن پیام / توضیحات کامل <span class="text-rose-500">*</span>
                     </label>
                     <textarea
                         wire:model="body"
                         rows="6"
-                        placeholder="متن کامل بخشنامه یا دستورالعمل مدیریتی را با دقت وارد فرمایید..."
+                        placeholder="متن کامل پیام یا دستورالعمل مدیریتی را با دقت وارد فرمایید..."
                         class="w-full rounded-xl border {{ $errors->has('body') ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-300 focus:border-cyan-500 focus:ring-cyan-100' }} p-4 text-sm leading-relaxed text-slate-800 placeholder-slate-400 outline-none transition focus:ring-4"
                     ></textarea>
                     @error('body')
@@ -530,7 +547,7 @@
                     >
                         <span wire:loading.remove>
                             <i class="fa fa-paper-plane ml-1"></i>
-                            ارسال و ابلاغ بخشنامه
+                            ارسال و ابلاغ پیام
                         </span>
                         <span wire:loading class="inline-flex items-center gap-1.5">
                             <i class="fa fa-spinner fa-spin"></i>
@@ -565,7 +582,7 @@
                             </h3>
                         </div>
                         <p class="mt-1 text-xs text-slate-500 font-bold">
-                            بخشنامه: <span class="text-slate-700">{{ $auditAnnouncement->title }}</span>
+                            پیام: <span class="text-slate-700">{{ $auditAnnouncement->title }}</span>
                         </p>
                     </div>
 
@@ -684,7 +701,7 @@
                         </div>
                     @empty
                         <div class="py-8 text-center text-xs text-slate-400">
-                            موردی در لیست گیرندگان این بخشنامه یافت نشد.
+                            موردی در لیست گیرندگان این پیام یافت نشد.
                         </div>
                     @endforelse
                 </div>
