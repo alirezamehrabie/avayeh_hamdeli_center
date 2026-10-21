@@ -28,7 +28,7 @@
                     {{-- دکمه شاخص، چشم‌نواز و دارای اولویت بالا برای ثبت پیام جدید --}}
                     <button
                         type="button"
-                        wire:click="switchTab('create')"
+                        wire:click="startCreate"
                         class="group relative inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-l from-cyan-600 via-sky-600 to-cyan-700 px-5 py-2.5 text-xs font-black text-white shadow-md shadow-cyan-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-600/40 focus:outline-none focus:ring-4 focus:ring-cyan-200 active:translate-y-0 sm:text-sm"
                     >
                         <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 text-white transition-transform duration-200 group-hover:scale-110 group-hover:bg-white/30">
@@ -47,10 +47,17 @@
                         <span>بازگشت به لیست پیام‌ها</span>
                     </button>
 
-                    <div class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-cyan-600 to-sky-700 px-4 py-2.5 text-xs font-black text-white shadow-sm sm:text-sm">
-                        <i class="fa fa-pen-fancy text-cyan-200"></i>
-                        <span>فرم ثبت پیام جدید</span>
-                    </div>
+                    @if ($editingAnnouncementId)
+                        <div class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-amber-600 to-orange-600 px-4 py-2.5 text-xs font-black text-white shadow-sm sm:text-sm">
+                            <i class="fa fa-pencil-square-o text-amber-200"></i>
+                            <span>فرم ویرایش پیام (کد #{{ $editingAnnouncementId }})</span>
+                        </div>
+                    @else
+                        <div class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-cyan-600 to-sky-700 px-4 py-2.5 text-xs font-black text-white shadow-sm sm:text-sm">
+                            <i class="fa fa-pen-fancy text-cyan-200"></i>
+                            <span>فرم ثبت پیام جدید</span>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>
@@ -257,6 +264,16 @@
 
                                         <button
                                             type="button"
+                                            wire:click="editAnnouncement({{ $announcement->id }})"
+                                            class="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-800 transition hover:bg-amber-100"
+                                            title="ویرایش عنوان، محتوا و تنظیمات پیام"
+                                        >
+                                            <i class="fa fa-pencil-square-o text-amber-600"></i>
+                                            <span>ویرایش</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
                                             wire:click="deleteAnnouncement({{ $announcement->id }})"
                                             wire:confirm="آیا از حذف این پیام و تمامی تاییدیه‌های آن اطمینان دارید؟ این عمل غیرقابل برگشت است."
                                             class="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
@@ -280,15 +297,25 @@
         </div>
     @endif
 
-    {{-- تب دوم: فرم ایجاد پیام جدید --}}
+    {{-- تب دوم: فرم ایجاد یا ویرایش پیام --}}
     @if ($activeTab === 'create')
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div class="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                    <h2 class="text-lg font-extrabold text-slate-800 sm:text-xl">ثبت و ابلاغ پیام جدید به مددکاران</h2>
-                    <p class="mt-1 text-xs text-slate-500 sm:text-sm">
-                        این پیام در زمان ورود مددکار به پنل خود به صورت خودکار و مسدودکننده نمایش داده خواهد شد.
-                    </p>
+                    @if ($editingAnnouncementId)
+                        <div class="flex items-center gap-2">
+                            <span class="rounded-lg bg-amber-100 px-2.5 py-0.5 text-xs font-black text-amber-800">حالت ویرایش</span>
+                            <h2 class="text-lg font-extrabold text-slate-800 sm:text-xl">ویرایش پیام ابلاغی به مددکاران</h2>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500 sm:text-sm">
+                            می‌توانید عنوان، متن، سطح اولویت، دامنه مخاطبان و تنظیمات مطالعه پیام را تغییر دهید.
+                        </p>
+                    @else
+                        <h2 class="text-lg font-extrabold text-slate-800 sm:text-xl">ثبت و ابلاغ پیام جدید به مددکاران</h2>
+                        <p class="mt-1 text-xs text-slate-500 sm:text-sm">
+                            این پیام در زمان ورود مددکار به پنل خود به صورت خودکار و مسدودکننده نمایش داده خواهد شد.
+                        </p>
+                    @endif
                 </div>
                 <button
                     type="button"
@@ -530,6 +557,27 @@
                     </div>
                 </div>
 
+                {{-- گزینه الزام به تایید مجدد در صورت ویرایش --}}
+                @if ($editingAnnouncementId)
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+                        <label class="flex cursor-pointer items-start gap-3">
+                            <input
+                                type="checkbox"
+                                wire:model="resetAcknowledgments"
+                                class="mt-1 rounded text-amber-600 focus:ring-amber-500"
+                            />
+                            <div>
+                                <span class="block text-xs font-extrabold text-amber-900 sm:text-sm">
+                                    الزام به تایید مجدد برای مددکارانی که قبلاً تایید کرده‌اند
+                                </span>
+                                <span class="text-[11px] text-amber-700 leading-relaxed block mt-1">
+                                    در صورت فعال کردن، وضعیت تایید تمامی مددکاران ریست خواهد شد تا نسخه اصلاح‌شده را دوباره مطالعه و تایید کنند. در غیر این صورت، تایید قبلی مددکاران برای این پیام محفوظ می‌ماند.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                @endif
+
                 {{-- دکمه‌های فرم --}}
                 <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
                     <button
@@ -543,15 +591,15 @@
                     <button
                         type="submit"
                         wire:loading.attr="disabled"
-                        class="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-cyan-200/50 transition hover:bg-cyan-700 disabled:opacity-50 sm:text-sm"
+                        class="inline-flex items-center gap-2 rounded-xl {{ $editingAnnouncementId ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200/50' : 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-200/50' }} px-6 py-2.5 text-xs font-bold text-white shadow-md transition disabled:opacity-50 sm:text-sm"
                     >
                         <span wire:loading.remove>
-                            <i class="fa fa-paper-plane ml-1"></i>
-                            ارسال و ابلاغ پیام
+                            <i class="fa {{ $editingAnnouncementId ? 'fa-check' : 'fa-paper-plane' }} ml-1"></i>
+                            {{ $editingAnnouncementId ? 'ذخیره تغییرات پیام' : 'ارسال و ابلاغ پیام' }}
                         </span>
                         <span wire:loading class="inline-flex items-center gap-1.5">
                             <i class="fa fa-spinner fa-spin"></i>
-                            در حال ثبت و ارسال...
+                            {{ $editingAnnouncementId ? 'در حال ذخیره تغییرات...' : 'در حال ثبت و ارسال...' }}
                         </span>
                     </button>
                 </div>

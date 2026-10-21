@@ -9,6 +9,7 @@ use App\Models\MandatoryAnnouncement;
 use App\Models\MandatoryAnnouncementRecipient;
 use App\Models\SocialWorker;
 use App\Services\Announcements\CreateMandatoryAnnouncementService;
+use App\Services\Announcements\UpdateMandatoryAnnouncementService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
@@ -27,6 +28,8 @@ class MandatoryAnnouncementsManager extends Component
     public string $activeTab = 'list'; // 'list' | 'create'
 
     // Form fields
+    public ?int $editingAnnouncementId = null;
+
     public string $title = '';
 
     public string $body = '';
@@ -41,6 +44,8 @@ class MandatoryAnnouncementsManager extends Component
     public bool $isBlocking = true;
 
     public int $minReadingSeconds = 5;
+
+    public bool $resetAcknowledgments = false;
 
     // Filters for list
     public string $search = '';
@@ -91,8 +96,67 @@ class MandatoryAnnouncementsManager extends Component
     public function switchTab(string $tab): void
     {
         if (in_array($tab, ['list', 'create'], true)) {
+            if ($tab === 'list') {
+                $this->resetForm();
+            } elseif ($tab === 'create' && $this->editingAnnouncementId !== null) {
+                $this->resetForm();
+            }
             $this->activeTab = $tab;
         }
+    }
+
+    public function startCreate(): void
+    {
+        $this->resetForm();
+        $this->activeTab = 'create';
+    }
+
+    public function editAnnouncement(int $announcementId): void
+    {
+        $this->authorizeAdminAccess();
+
+        $announcement = MandatoryAnnouncement::query()
+            ->with(['recipients.socialWorker'])
+            ->findOrFail($announcementId);
+
+        $this->editingAnnouncementId = $announcement->id;
+        $this->title = $announcement->title;
+        $this->body = $announcement->body;
+        $this->priority = $announcement->priority;
+        $this->targetType = $announcement->target_type;
+        $this->isBlocking = $announcement->is_blocking;
+        $this->minReadingSeconds = $announcement->min_reading_seconds;
+        $this->resetAcknowledgments = false;
+
+        if ($announcement->target_type === MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS) {
+            $this->selectedSocialWorkerIds = $announcement->recipients
+                ->pluck('social_worker_id')
+                ->filter()
+                ->unique()
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        } else {
+            $this->selectedSocialWorkerIds = [];
+        }
+
+        $this->activeTab = 'create';
+    }
+
+    public function resetForm(): void
+    {
+        $this->reset([
+            'editingAnnouncementId',
+            'title',
+            'body',
+            'selectedSocialWorkerIds',
+            'workerSearch',
+            'resetAcknowledgments',
+        ]);
+        $this->priority = MandatoryAnnouncement::PRIORITY_IMPORTANT;
+        $this->targetType = MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS;
+        $this->isBlocking = true;
+        $this->minReadingSeconds = 5;
     }
 
     /**
@@ -130,6 +194,7 @@ class MandatoryAnnouncementsManager extends Component
             'selectedSocialWorkerIds.*' => ['integer', 'exists:social_workers,id'],
             'isBlocking' => ['boolean'],
             'minReadingSeconds' => ['integer', 'min:0', 'max:300'],
+            'resetAcknowledgments' => ['boolean'],
         ];
     }
 
@@ -146,16 +211,19 @@ class MandatoryAnnouncementsManager extends Component
             'selectedSocialWorkerIds' => 'مددکاران منتخب',
             'isBlocking' => 'الزام مسدودکننده',
             'minReadingSeconds' => 'حداقل ثانیه مطالعه الزامی',
+            'resetAcknowledgments' => 'الزام به تایید مجدد',
         ];
     }
 
-    public function saveAnnouncement(CreateMandatoryAnnouncementService $service): void
-    {
+    public function saveAnnouncement(
+        CreateMandatoryAnnouncementService $createService,
+        UpdateMandatoryAnnouncementService $updateService
+    ): void {
         $this->authorizeAdminAccess();
 
         $validated = $this->validate();
 
-        $service->create([
+        $payload = [
             'title' => $validated['title'],
             'body' => $validated['body'],
             'priority' => $validated['priority'],
@@ -165,21 +233,21 @@ class MandatoryAnnouncementsManager extends Component
                 : [],
             'is_blocking' => $validated['isBlocking'],
             'min_reading_seconds' => $validated['minReadingSeconds'],
-        ], auth()->user());
+        ];
 
-        $this->reset([
-            'title',
-            'body',
-            'selectedSocialWorkerIds',
-            'workerSearch',
-        ]);
-        $this->priority = MandatoryAnnouncement::PRIORITY_IMPORTANT;
-        $this->targetType = MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS;
-        $this->isBlocking = true;
-        $this->minReadingSeconds = 5;
+        if ($this->editingAnnouncementId) {
+            $announcement = MandatoryAnnouncement::query()->findOrFail($this->editingAnnouncementId);
+            $payload['reset_acknowledgments'] = $this->resetAcknowledgments;
 
+            $updateService->update($announcement, $payload);
+            session()->flash('success', 'پیام با موفقیت ویرایش و به‌روزرسانی شد.');
+        } else {
+            $createService->create($payload, auth()->user());
+            session()->flash('success', 'پیام با موفقیت ثبت و به حساب مددکاران مربوطه ابلاغ شد.');
+        }
+
+        $this->resetForm();
         $this->activeTab = 'list';
-        session()->flash('success', 'پیام با موفقیت ثبت و به حساب مددکاران مربوطه ابلاغ شد.');
     }
 
     public function deleteAnnouncement(int $announcementId): void
@@ -194,6 +262,10 @@ class MandatoryAnnouncementsManager extends Component
 
         if ($this->selectedAnnouncementIdForAudit === $announcementId) {
             $this->closeAuditModal();
+        }
+
+        if ($this->editingAnnouncementId === $announcementId) {
+            $this->resetForm();
         }
 
         session()->flash('success', 'پیام مورد نظر با موفقیت حذف گردید.');

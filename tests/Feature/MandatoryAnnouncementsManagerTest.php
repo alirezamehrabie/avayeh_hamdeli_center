@@ -247,4 +247,118 @@ class MandatoryAnnouncementsManagerTest extends TestCase
 
         $this->assertSoftDeleted('mandatory_announcements', ['id' => $announcement->id]);
     }
+
+    public function test_admin_can_load_announcement_into_edit_mode(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $worker1 = $this->createSocialWorker(9010, 'مریم', 'صادقی');
+
+        $announcement = MandatoryAnnouncement::query()->create([
+            'created_by' => $this->adminUser->id,
+            'title' => 'عنوان جهت ویرایش',
+            'body' => 'محتوای اصلی جهت ویرایش',
+            'priority' => MandatoryAnnouncement::PRIORITY_URGENT,
+            'target_type' => MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS,
+            'is_blocking' => true,
+            'min_reading_seconds' => 15,
+        ]);
+
+        MandatoryAnnouncementRecipient::query()->create([
+            'announcement_id' => $announcement->id,
+            'user_id' => $this->adminUser->id,
+            'social_worker_id' => $worker1->id,
+        ]);
+
+        Livewire::test(MandatoryAnnouncementsManager::class)
+            ->call('editAnnouncement', $announcement->id)
+            ->assertSet('editingAnnouncementId', $announcement->id)
+            ->assertSet('title', 'عنوان جهت ویرایش')
+            ->assertSet('body', 'محتوای اصلی جهت ویرایش')
+            ->assertSet('priority', MandatoryAnnouncement::PRIORITY_URGENT)
+            ->assertSet('targetType', MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS)
+            ->assertSet('selectedSocialWorkerIds', [$worker1->id])
+            ->assertSet('isBlocking', true)
+            ->assertSet('minReadingSeconds', 15)
+            ->assertSet('activeTab', 'create')
+            ->assertSee('حالت ویرایش')
+            ->assertSee('ویرایش پیام ابلاغی به مددکاران')
+            ->assertSee('ذخیره تغییرات پیام');
+    }
+
+    public function test_admin_can_update_announcement_details(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $announcement = MandatoryAnnouncement::query()->create([
+            'created_by' => $this->adminUser->id,
+            'title' => 'عنوان قدیمی',
+            'body' => 'متن قدیمی پیام',
+            'priority' => MandatoryAnnouncement::PRIORITY_NORMAL,
+            'target_type' => MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS,
+            'is_blocking' => false,
+            'min_reading_seconds' => 0,
+        ]);
+
+        Livewire::test(MandatoryAnnouncementsManager::class)
+            ->call('editAnnouncement', $announcement->id)
+            ->set('title', 'عنوان جدید و ویرایش‌شده')
+            ->set('body', 'متن جدید و به‌روزشده پیام')
+            ->set('priority', MandatoryAnnouncement::PRIORITY_URGENT)
+            ->set('isBlocking', true)
+            ->set('minReadingSeconds', 20)
+            ->call('saveAnnouncement')
+            ->assertHasNoErrors()
+            ->assertSet('activeTab', 'list')
+            ->assertSet('editingAnnouncementId', null);
+
+        $announcement->refresh();
+        $this->assertEquals('عنوان جدید و ویرایش‌شده', $announcement->title);
+        $this->assertEquals('متن جدید و به‌روزشده پیام', $announcement->body);
+        $this->assertEquals(MandatoryAnnouncement::PRIORITY_URGENT, $announcement->priority);
+        $this->assertTrue($announcement->is_blocking);
+        $this->assertEquals(20, $announcement->min_reading_seconds);
+    }
+
+    public function test_admin_can_update_announcement_with_acknowledgments_reset(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $worker1 = $this->createSocialWorker(9011, 'حسین', 'قاسمی');
+        $user1 = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'social_worker_id' => $worker1->id,
+        ]);
+
+        $announcement = MandatoryAnnouncement::query()->create([
+            'created_by' => $this->adminUser->id,
+            'title' => 'پیام قبل از اصلاح',
+            'body' => 'متن اولیه',
+            'priority' => MandatoryAnnouncement::PRIORITY_IMPORTANT,
+            'target_type' => MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS,
+            'is_blocking' => true,
+            'min_reading_seconds' => 5,
+        ]);
+
+        $recipient = MandatoryAnnouncementRecipient::query()->create([
+            'announcement_id' => $announcement->id,
+            'user_id' => $user1->id,
+            'social_worker_id' => $worker1->id,
+            'read_at' => now(),
+            'ip_address' => '10.0.0.1',
+        ]);
+
+        $this->assertNotNull($recipient->read_at);
+
+        Livewire::test(MandatoryAnnouncementsManager::class)
+            ->call('editAnnouncement', $announcement->id)
+            ->set('body', 'متن اصلاح‌شده و مهم جدید')
+            ->set('resetAcknowledgments', true)
+            ->call('saveAnnouncement')
+            ->assertHasNoErrors();
+
+        $recipient->refresh();
+        $this->assertNull($recipient->read_at);
+        $this->assertNull($recipient->ip_address);
+    }
 }
