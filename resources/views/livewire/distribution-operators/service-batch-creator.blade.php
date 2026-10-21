@@ -522,13 +522,16 @@
                             }
                         }"
                         x-on:predefined-worker-group-added.window="scrollToNewGroup($event)"
+                        x-on:scroll-to-predefined-worker-group.window="scrollToNewGroup($event)"
                         class="space-y-3 p-3 sm:p-4"
                     >
-                        <div class="flex items-center justify-between gap-3 px-1">
+                        @include('livewire.distribution-operators.partials.predefined-service-existing-allocations')
+
+                        <div class="flex items-center justify-between gap-3 px-1 pt-1">
                             <p class="truncate text-[11px] font-bold text-slate-500">{{ $selectedService->code }} · موجودی کل: {{ number_format((float) $selectedService->total_quantity, 2) }}</p>
                             <div class="flex shrink-0 items-center gap-1.5">
                                 <span class="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-700">{{ count($selectedServiceCategories) }} دسته</span>
-                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ count($predefinedWorkerGroups) }} مددکار</span>
+                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ count($predefinedWorkerGroups) }} کارت</span>
                             </div>
                         </div>
 

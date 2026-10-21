@@ -2517,4 +2517,143 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
 
         return [$operator, $worker, $service, $category];
     }
+
+    public function test_predefined_mode_displays_prior_allocations_and_prepopulates_worker_allocations(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 771,
+            'first_name' => 'Existing',
+            'last_name' => 'RecipientWorker',
+            'is_active' => true,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Predefined Prior Service',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Predefined Prior Service',
+            'service_type' => 'individual',
+            'total_quantity' => 20,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'created_by' => $manager->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Sugar',
+            'quantity' => 20,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 8,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        $test = Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->assertSee('سوابق تخصیص‌های ثبت‌شده پیشین')
+            ->assertSee('Existing RecipientWorker')
+            ->assertSee('8.00');
+
+        $test->call('loadPredefinedExistingWorkerIntoForm', $worker->id);
+
+        $groups = $test->get('predefinedWorkerGroups');
+        $this->assertSame((int) $worker->id, (int) $groups[0]['social_worker_id']);
+        $this->assertTrue($groups[0]['has_existing_allocation']);
+        $this->assertSame('8', (string) $groups[0]['allocations'][$category->id]);
+    }
+
+    public function test_predefined_mode_rejects_reducing_allocation_below_delivered_quantity(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 772,
+            'first_name' => 'Delivered',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Predefined Delivery Service',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Predefined Delivery Service',
+            'service_type' => 'individual',
+            'total_quantity' => 15,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'created_by' => $manager->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Tea',
+            'quantity' => 15,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 10,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'national_id' => '1234567890',
+            'full_name' => 'Beneficiary One',
+            'delivered_quantity' => 4,
+            'value_per_unit_snapshot' => 100,
+            'delivered_total_value' => 400,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->call('loadPredefinedExistingWorkerIntoForm', $worker->id)
+            ->set('predefinedWorkerGroups.0.allocations.'.$category->id, '3')
+            ->call('saveBatch')
+            ->assertHasErrors(['predefinedWorkerGroups.0.allocations.'.$category->id]);
+    }
 }

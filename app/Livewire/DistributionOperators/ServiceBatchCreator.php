@@ -8,6 +8,7 @@ use App\Livewire\DistributionOperators\Concerns\ConvertsJalaliDates;
 use App\Livewire\DistributionOperators\Concerns\FormatsServiceQuantities;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Queries\Deliveries\MiscServiceEditQuery;
@@ -141,11 +142,11 @@ class ServiceBatchCreator extends Component
      */
     protected ?array $selectedPredefinedAllocatedByCategoryCache = null;
 
-    protected ?int $selectedPredefinedAllocatedByCategoryCacheServiceId = null;
+    protected ?string $selectedPredefinedAllocatedByCategoryCacheServiceId = null;
 
     protected ?array $selectedPredefinedCategoryMetricsCache = null;
 
-    protected ?int $selectedPredefinedCategoryMetricsCacheServiceId = null;
+    protected ?string $selectedPredefinedCategoryMetricsCacheServiceId = null;
 
     protected ?Collection $socialWorkerSuggestionsCache = null;
 
@@ -297,6 +298,12 @@ class ServiceBatchCreator extends Component
             $this->activePredefinedGroupIndex = $groupIndex;
             $this->showSocialWorkerSuggestions = true;
             $this->flushSocialWorkerSuggestions();
+
+            return;
+        }
+
+        if (($segments[1] ?? null) === 'social_worker_id') {
+            $this->flushSelectedPredefinedServiceMetrics();
 
             return;
         }
@@ -529,11 +536,67 @@ class ServiceBatchCreator extends Component
         $this->predefinedWorkerGroups[$index]['worker_code'] = $worker->worker_code ? (string) $worker->worker_code : '-';
         $this->predefinedWorkerGroups[$index]['worker_display'] = $this->formatSelectedSocialWorkerDisplay($worker);
 
+        // Fetch existing allocations for this worker on this predefined service, if any
+        $existingAllocations = $this->selectedServiceId
+            ? ServiceWorkerAllocation::query()
+                ->where('service_id', $this->selectedServiceId)
+                ->where('social_worker_id', $worker->id)
+                ->get()
+            : collect();
+
+        $hasOtherOperatorError = false;
+
+        if ($existingAllocations->isNotEmpty()) {
+            $otherOperatorAllocation = $existingAllocations->first(
+                fn (ServiceWorkerAllocation $alloc): bool => (int) $alloc->assigned_by_user_id !== (int) auth()->id()
+            );
+
+            if ($otherOperatorAllocation) {
+                $hasOtherOperatorError = true;
+                $this->addError(
+                    "predefinedWorkerGroups.{$index}.social_worker_id",
+                    'این مددکار قبلاً توسط اپراتور دیگری در این خدمت سهمیه گرفته است و امکان ویرایش توسط شما را ندارد.'
+                );
+            }
+
+            $deliveries = ServiceDelivery::query()
+                ->select('service_category_id')
+                ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+                ->where('service_id', $this->selectedServiceId)
+                ->where('social_worker_id', $worker->id)
+                ->groupBy('service_category_id')
+                ->pluck('delivered_quantity', 'service_category_id')
+                ->map(fn ($qty): float => (float) $qty)
+                ->all();
+
+            $this->predefinedWorkerGroups[$index]['has_existing_allocation'] = true;
+            $this->predefinedWorkerGroups[$index]['previous_allocations'] = [];
+            $this->predefinedWorkerGroups[$index]['delivered_quantities'] = $deliveries;
+
+            foreach ($existingAllocations as $existingAllocation) {
+                $catId = (int) $existingAllocation->service_category_id;
+                $qty = (float) $existingAllocation->allocated_quantity;
+                $this->predefinedWorkerGroups[$index]['previous_allocations'][$catId] = $qty;
+
+                if (! isset($this->predefinedWorkerGroups[$index]['allocations'][$catId]) || $this->predefinedWorkerGroups[$index]['allocations'][$catId] === '') {
+                    $this->predefinedWorkerGroups[$index]['allocations'][$catId] = $this->formatPredefinedCategoryQuantity($catId, $qty);
+                }
+            }
+        } else {
+            $this->predefinedWorkerGroups[$index]['has_existing_allocation'] = false;
+            $this->predefinedWorkerGroups[$index]['previous_allocations'] = [];
+            $this->predefinedWorkerGroups[$index]['delivered_quantities'] = [];
+        }
+
         $this->showSocialWorkerSuggestions = false;
         $this->activePredefinedGroupIndex = null;
         $this->flushSocialWorkerSuggestions();
+        $this->flushSelectedPredefinedServiceMetrics();
         $this->confirmingBatchSave = false;
-        $this->resetValidation("predefinedWorkerGroups.{$index}.social_worker_id");
+
+        if (! $hasOtherOperatorError) {
+            $this->resetValidation("predefinedWorkerGroups.{$index}.social_worker_id");
+        }
     }
 
     public function clearPredefinedGroupWorker(int $index): void
@@ -547,11 +610,105 @@ class ServiceBatchCreator extends Component
         $this->predefinedWorkerGroups[$index]['worker_search'] = '';
         $this->predefinedWorkerGroups[$index]['worker_code'] = '';
         $this->predefinedWorkerGroups[$index]['worker_display'] = '';
+        $this->predefinedWorkerGroups[$index]['has_existing_allocation'] = false;
+        $this->predefinedWorkerGroups[$index]['previous_allocations'] = [];
+        $this->predefinedWorkerGroups[$index]['delivered_quantities'] = [];
+        $this->predefinedWorkerGroups[$index]['allocations'] = [];
         $this->showSocialWorkerSuggestions = true;
         $this->activePredefinedGroupIndex = $index;
         $this->flushSocialWorkerSuggestions();
+        $this->flushSelectedPredefinedServiceMetrics();
         $this->confirmingBatchSave = false;
         $this->resetValidation("predefinedWorkerGroups.{$index}.social_worker_id");
+    }
+
+    public function getPredefinedExistingAllocationsProperty(): Collection
+    {
+        if ($this->mode !== self::MODE_PREDEFINED || ! $this->selectedServiceId) {
+            return collect();
+        }
+
+        $service = $this->selectedPredefinedService;
+        if (! $service) {
+            return collect();
+        }
+
+        $allocations = ServiceWorkerAllocation::query()
+            ->with(['socialWorker.district:id,name', 'serviceCategory:id,name,unit', 'assignedBy:id,name'])
+            ->where('service_id', $service->id)
+            ->get();
+
+        if ($allocations->isEmpty()) {
+            return collect();
+        }
+
+        $deliveries = ServiceDelivery::query()
+            ->select('social_worker_id', 'service_category_id')
+            ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+            ->where('service_id', $service->id)
+            ->whereNotNull('social_worker_id')
+            ->groupBy('social_worker_id', 'service_category_id')
+            ->get()
+            ->groupBy('social_worker_id');
+
+        return $allocations->groupBy('social_worker_id')->map(function (Collection $workerAllocations, int $workerId) use ($deliveries): array {
+            $first = $workerAllocations->first();
+            $worker = $first->socialWorker;
+            $workerDeliveries = $deliveries->get($workerId, collect())->keyBy('service_category_id');
+
+            $categories = $workerAllocations->map(function (ServiceWorkerAllocation $allocation) use ($workerDeliveries): array {
+                $delivered = (float) ($workerDeliveries->get($allocation->service_category_id)?->delivered_quantity ?? 0);
+
+                return [
+                    'category_id' => (int) $allocation->service_category_id,
+                    'name' => $allocation->serviceCategory?->name ?? 'دسته‌بندی',
+                    'unit' => $allocation->serviceCategory?->unit ?? '',
+                    'allocated_quantity' => (float) $allocation->allocated_quantity,
+                    'delivered_quantity' => $delivered,
+                    'remaining_to_deliver' => max(0, (float) $allocation->allocated_quantity - $delivered),
+                    'assigned_by_user_id' => (int) $allocation->assigned_by_user_id,
+                    'assigned_by_name' => $allocation->assignedBy?->name ?? '-',
+                    'is_assigned_by_current_user' => (int) $allocation->assigned_by_user_id === (int) auth()->id(),
+                ];
+            })->values();
+
+            $totalAllocated = (float) $categories->sum('allocated_quantity');
+            $totalDelivered = (float) $categories->sum('delivered_quantity');
+
+            return [
+                'worker_id' => $workerId,
+                'worker_name' => $worker ? trim($worker->full_name) : 'مددکار نامشخص',
+                'worker_code' => $worker?->worker_code ? (string) $worker->worker_code : '-',
+                'district' => $worker?->district?->name ?: 'بدون منطقه',
+                'categories' => $categories,
+                'total_allocated' => $totalAllocated,
+                'total_delivered' => $totalDelivered,
+                'is_fully_assigned_by_current_user' => $categories->every(fn (array $cat): bool => $cat['is_assigned_by_current_user']),
+                'has_any_delivered' => $totalDelivered > 0,
+            ];
+        })->values();
+    }
+
+    public function loadPredefinedExistingWorkerIntoForm(int $workerId): void
+    {
+        foreach ($this->predefinedWorkerGroups as $index => $group) {
+            if ((int) ($group['social_worker_id'] ?? 0) === $workerId) {
+                $this->dispatch('scroll-to-predefined-worker-group', index: $index);
+
+                return;
+            }
+        }
+
+        $targetIndex = null;
+        if (count($this->predefinedWorkerGroups) === 1 && empty($this->predefinedWorkerGroups[0]['social_worker_id'])) {
+            $targetIndex = 0;
+        } else {
+            $this->predefinedWorkerGroups[] = $this->makePredefinedWorkerGroup();
+            $targetIndex = array_key_last($this->predefinedWorkerGroups);
+        }
+
+        $this->selectPredefinedGroupWorker($targetIndex, $workerId);
+        $this->dispatch('scroll-to-predefined-worker-group', index: $targetIndex);
     }
 
     public function useMaxPredefinedGroupAllocation(int $index, int $categoryId): void
@@ -903,6 +1060,13 @@ class ServiceBatchCreator extends Component
             $hasAnyRow = true;
 
             foreach ($rows as $row) {
+                $delivered = (float) ($group['delivered_quantities'][$row['category_id']] ?? 0);
+                if ($delivered > 0 && (float) $row['quantity'] < $delivered) {
+                    throw ValidationException::withMessages([
+                        "predefinedWorkerGroups.{$groupIndex}.allocations.{$row['category_id']}" => 'مقدار تخصیص نمی‌تواند از مقدار تحویل‌شده کمتر باشد.',
+                    ]);
+                }
+
                 $baseAssignable = $this->predefinedBaseAssignableForCategory((int) $row['category_id']);
                 $alreadyClaimed = (float) ($claimedByCategory[$row['category_id']] ?? 0);
 
@@ -1833,6 +1997,9 @@ class ServiceBatchCreator extends Component
             'worker_code' => '',
             'worker_display' => '',
             'allocations' => [],
+            'has_existing_allocation' => false,
+            'previous_allocations' => [],
+            'delivered_quantities' => [],
         ];
     }
 
@@ -2129,6 +2296,13 @@ class ServiceBatchCreator extends Component
         $quantity = $this->predefinedGroupAllocationForCategory($index, $categoryId);
         $assignableQuantity = $this->predefinedGroupAssignableForCategory($index, $categoryId);
 
+        $delivered = (float) ($this->predefinedWorkerGroups[$index]['delivered_quantities'][$categoryId] ?? 0);
+        if ($delivered > 0 && $quantity < $delivered) {
+            $this->addError($field, 'مقدار تخصیص نمی‌تواند از مقدار تحویل‌شده کمتر باشد.');
+
+            return;
+        }
+
         if ($quantity > $assignableQuantity) {
             $this->addError($field, 'مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.');
 
@@ -2203,14 +2377,23 @@ class ServiceBatchCreator extends Component
             return [];
         }
 
+        $formWorkerIds = collect($this->predefinedWorkerGroups)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        $cacheKey = (int) $service->id.':'.implode(',', $formWorkerIds);
+
         if (is_array($this->selectedPredefinedCategoryMetricsCache)
-            && $this->selectedPredefinedCategoryMetricsCacheServiceId === (int) $service->id) {
+            && (string) $this->selectedPredefinedCategoryMetricsCacheServiceId === $cacheKey) {
             return $this->selectedPredefinedCategoryMetricsCache;
         }
 
         $allocatedByCategory = $this->allocatedQuantitiesByCategoryForSelectedPredefinedService($service);
 
-        $this->selectedPredefinedCategoryMetricsCacheServiceId = (int) $service->id;
+        $this->selectedPredefinedCategoryMetricsCacheServiceId = $cacheKey;
 
         return $this->selectedPredefinedCategoryMetricsCache = $service->categories
             ->mapWithKeys(function (ServiceCategory $category) use ($allocatedByCategory): array {
@@ -2233,15 +2416,31 @@ class ServiceBatchCreator extends Component
      */
     protected function allocatedQuantitiesByCategoryForSelectedPredefinedService(Service $service): array
     {
+        $formWorkerIds = collect($this->predefinedWorkerGroups)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        $cacheKey = (int) $service->id.':'.implode(',', $formWorkerIds);
+
         if (is_array($this->selectedPredefinedAllocatedByCategoryCache)
-            && $this->selectedPredefinedAllocatedByCategoryCacheServiceId === (int) $service->id) {
+            && (string) $this->selectedPredefinedAllocatedByCategoryCacheServiceId === $cacheKey) {
             return $this->selectedPredefinedAllocatedByCategoryCache;
         }
 
-        $this->selectedPredefinedAllocatedByCategoryCacheServiceId = (int) $service->id;
+        $this->selectedPredefinedAllocatedByCategoryCacheServiceId = $cacheKey;
 
-        return $this->selectedPredefinedAllocatedByCategoryCache = app(PredefinedServiceCatalogQuery::class)
-            ->allocatedQuantitiesByCategory($service);
+        return $this->selectedPredefinedAllocatedByCategoryCache = ServiceWorkerAllocation::query()
+            ->select('service_category_id')
+            ->selectRaw('COALESCE(SUM(allocated_quantity), 0) as allocated_quantity')
+            ->where('service_id', $service->id)
+            ->when($formWorkerIds !== [], fn ($query) => $query->whereNotIn('social_worker_id', $formWorkerIds))
+            ->groupBy('service_category_id')
+            ->pluck('allocated_quantity', 'service_category_id')
+            ->map(fn ($quantity): float => (float) $quantity)
+            ->all();
     }
 
     protected function flushSelectedPredefinedServiceMetrics(): void
@@ -2371,6 +2570,26 @@ class ServiceBatchCreator extends Component
 
     protected function socialWorkerSuggestionPayload(SocialWorker $worker, float $allocatedQuantity, bool $isDuplicate = false): array
     {
+        $existingServiceAllocation = null;
+        if ($this->mode === self::MODE_PREDEFINED && $this->selectedServiceId) {
+            $allocs = ServiceWorkerAllocation::query()
+                ->where('service_id', $this->selectedServiceId)
+                ->where('social_worker_id', $worker->id)
+                ->get();
+
+            if ($allocs->isNotEmpty()) {
+                $totalAllocated = (float) $allocs->sum('allocated_quantity');
+                $isOtherOperator = $allocs->contains(
+                    fn (ServiceWorkerAllocation $alloc): bool => (int) $alloc->assigned_by_user_id !== (int) auth()->id()
+                );
+                $existingServiceAllocation = [
+                    'has_allocation' => true,
+                    'total_quantity' => $totalAllocated,
+                    'is_other_operator' => $isOtherOperator,
+                ];
+            }
+        }
+
         return [
             'id' => (int) $worker->id,
             'duplicate' => $isDuplicate,
@@ -2383,6 +2602,7 @@ class ServiceBatchCreator extends Component
             'covered_children' => (int) ($worker->covered_children_count ?? 0),
             'open_allocations' => (int) ($worker->open_allocations_count ?? 0),
             'allocated_quantity_label' => number_format($allocatedQuantity, 2),
+            'existing_service_allocation' => $existingServiceAllocation,
         ];
     }
 

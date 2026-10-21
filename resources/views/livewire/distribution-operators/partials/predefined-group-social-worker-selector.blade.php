@@ -440,6 +440,16 @@
                                         <span class="w-full rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-slate-500 ring-1 ring-slate-200 sm:w-auto">
                                             قبلاً برای این خدمت انتخاب شده است
                                         </span>
+                                    @elseif(!empty($worker['existing_service_allocation']['has_allocation']))
+                                        @if($worker['existing_service_allocation']['is_other_operator'] ?? false)
+                                            <span class="w-full rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700 ring-1 ring-amber-200 sm:w-auto">
+                                                تخصیص توسط اپراتور دیگر
+                                            </span>
+                                        @else
+                                            <span class="w-full rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700 ring-1 ring-indigo-200 sm:w-auto">
+                                                دارای سهمیه قبلی ({{ number_format($worker['existing_service_allocation']['total_quantity'], 2) }})
+                                            </span>
+                                        @endif
                                     @endif
                                 </span>
                             </span>

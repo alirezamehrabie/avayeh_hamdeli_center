@@ -43,7 +43,6 @@ class PredefinedServiceAllocator
             $existingByWorkerAndCategory = $lockedAllocations
                 ->keyBy(fn (ServiceWorkerAllocation $allocation): string => $allocation->service_category_id.':'.$allocation->social_worker_id);
 
-
             $claimedByCategory = [];
 
             foreach ($groups as $group) {
@@ -77,6 +76,18 @@ class PredefinedServiceAllocator
                     if ($row['quantity'] > $remainingAssignable) {
                         throw ValidationException::withMessages([
                             "predefinedWorkerGroups.{$group['index']}.allocations.{$category->id}" => 'مقدار تخصیص نمی‌تواند از موجودی دسته‌بندی بیشتر باشد.',
+                        ]);
+                    }
+
+                    $deliveredQuantity = (float) \App\Models\ServiceDelivery::query()
+                        ->where('service_id', $service->id)
+                        ->where('service_category_id', $category->id)
+                        ->where('social_worker_id', $workerId)
+                        ->sum('delivered_quantity');
+
+                    if ($row['quantity'] < $deliveredQuantity) {
+                        throw ValidationException::withMessages([
+                            "predefinedWorkerGroups.{$group['index']}.allocations.{$category->id}" => 'مقدار تخصیص نمی‌تواند از مقدار تحویل‌شده کمتر باشد.',
                         ]);
                     }
 
