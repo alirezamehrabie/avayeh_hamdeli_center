@@ -125,6 +125,40 @@ class SocialWorkerDedicatedRankingPageTest extends TestCase
             ->assertDontSee('Parisa Worker');
     }
 
+    public function test_instant_modal_structure_and_skeleton_loader(): void
+    {
+        $manager = $this->managerUser();
+        $worker = $this->worker(9407, 'Kamran');
+        $this->actingAs($manager);
+
+        $response = $this->get(route('admin.social-workers.ranking'));
+        $response->assertOk();
+
+        // بررسی وجود کانتینر مشترک مودال و اسکلتون لودر
+        $response->assertSee('wire:key="shared-social-worker-modal"', false);
+        $response->assertSee('x-show="isLoading"', false);
+        $response->assertSee('animate-pulse');
+        $response->assertSee('retryLoad()', false);
+        $response->assertSee('@click.stop', false);
+        $response->assertSee('@mousedown.stop', false);
+    }
+
+    public function test_modal_loads_worker_details_via_livewire(): void
+    {
+        $manager = $this->managerUser();
+        $worker = $this->worker(9406, 'Reza');
+        $this->actingAs($manager);
+
+        Livewire::test(SocialWorkerRanking::class)
+            ->call('showWorkerInfo', $worker->id)
+            ->assertSet('selectedWorkerId', $worker->id)
+            ->assertSet('showWorkerModal', true)
+            ->assertSee('Reza Worker')
+            ->call('closeWorkerModal')
+            ->assertSet('selectedWorkerId', null)
+            ->assertSet('showWorkerModal', false);
+    }
+
     private function managerUser(): User
     {
         return User::factory()->create([

@@ -162,6 +162,11 @@ class SocialWorkerRanking extends Component
         $this->workerModalTab = 'performance';
     }
 
+    public function loadWorkerDetails(int $workerId): void
+    {
+        $this->showWorkerInfo($workerId);
+    }
+
     public function setWorkerModalTab(string $tab): void
     {
         if (isset($this->workerModalTabs[$tab])) {

@@ -17,7 +17,86 @@
     $isManager = auth()->user()?->isManager() ?? false;
 @endphp
 
-<div class="container mx-auto max-w-7xl p-3 sm:p-5 xl:p-6" dir="rtl">
+<div
+    class="container mx-auto max-w-7xl p-3 sm:p-5 xl:p-6"
+    dir="rtl"
+    x-data="{
+        isOpen: @js($showWorkerModal),
+        isLoading: false,
+        loadError: null,
+        activeReqId: 0,
+        originalBodyOverflow: '',
+        worker: {
+            id: null,
+            name: '',
+            code: '',
+            rank: null,
+            score: '0.0',
+            grade: '',
+            accent: 'slate',
+            stars: '0.0',
+            is_active: true
+        },
+        openWorkerModal(data) {
+            this.worker = Object.assign({}, data);
+            this.isOpen = true;
+            this.isLoading = true;
+            this.loadError = null;
+            this.lockScroll();
+
+            const reqId = ++this.activeReqId;
+            this.$wire.showWorkerInfo(data.id)
+                .then(() => {
+                    if (this.activeReqId === reqId) {
+                        this.isLoading = false;
+                        this.loadError = null;
+                    }
+                })
+                .catch(() => {
+                    if (this.activeReqId === reqId) {
+                        this.isLoading = false;
+                        this.loadError = 'خطا در بارگذاری جزئیات عملکرد مددکار.';
+                    }
+                });
+        },
+        retryLoad() {
+            if (!this.worker.id) return;
+            this.isLoading = true;
+            this.loadError = null;
+            const reqId = ++this.activeReqId;
+
+            this.$wire.showWorkerInfo(this.worker.id)
+                .then(() => {
+                    if (this.activeReqId === reqId) {
+                        this.isLoading = false;
+                        this.loadError = null;
+                    }
+                })
+                .catch(() => {
+                    if (this.activeReqId === reqId) {
+                        this.isLoading = false;
+                        this.loadError = 'خطا در بارگذاری جزئیات عملکرد مددکار.';
+                    }
+                });
+        },
+        close() {
+            this.isOpen = false;
+            this.activeReqId++;
+            this.unlockScroll();
+            this.$wire.closeWorkerModal();
+        },
+        lockScroll() {
+            if (!this.originalBodyOverflow) {
+                this.originalBodyOverflow = document.body.style.overflow;
+            }
+            document.body.style.overflow = 'hidden';
+        },
+        unlockScroll() {
+            document.body.style.overflow = this.originalBodyOverflow || '';
+        }
+    }"
+    @keydown.escape.window="if (isOpen) close()"
+>
     {{-- استایل‌های بهینه‌سازی چاپ و خروجی PDF --}}
     <style>
         @media print {
@@ -257,10 +336,20 @@
                 $gaugeOffset = $gaugeCircumference * (1 - min(100, max(0, $row['score'])) / 100);
             @endphp
 
-            {{-- کارت رتبه‌بندی مددکار (کلیک روی کل کارت مودال جزئیات را باز می‌کند) --}}
+            {{-- کارت رتبه‌بندی مددکار (کلیک روی کل کارت مودال جزئیات را بلافاصله باز می‌کند) --}}
             <div
                 wire:key="worker-card-{{ $row['id'] }}"
-                wire:click="showWorkerInfo({{ $row['id'] }})"
+                @click="openWorkerModal({{ json_encode([
+                    'id' => $row['id'],
+                    'name' => $row['full_name'],
+                    'code' => $row['worker_code'],
+                    'rank' => $rank,
+                    'score' => number_format($row['score'], 1),
+                    'grade' => $row['grade']['label'],
+                    'accent' => $row['grade']['accent'],
+                    'stars' => number_format($row['stars'], 1),
+                    'is_active' => (bool) $row['is_active'],
+                ]) }})"
                 role="button"
                 tabindex="0"
                 class="group cursor-pointer flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-200"
@@ -332,20 +421,22 @@
                 </div>
 
                 {{-- بخش اختصاصی ضریب ارزیابی مدیریت:
-                     ۱. جلوگیری از باز شدن ناخواسته مودال با event.stopPropagation()
+                     ۱. جلوگیری قطعی از باز شدن ناخواسته مودال با @click.stop و @mousedown.stop
                      ۲. مخفی‌سازی کامل در خروجی PDF و چاپ با print:hidden و no-print --}}
                 <div
                     @click.stop
+                    @mousedown.stop
                     class="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 print:hidden no-print"
                     data-no-print
                 >
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-1.5" @click.stop @mousedown.stop>
                         <span class="text-[10px] font-black text-slate-600">ضریب مدیریت:</span>
 
                         @if($isManager)
-                            <div class="relative flex items-center" @click.stop>
+                            <div class="relative flex items-center" @click.stop @mousedown.stop>
                                 <select
                                     @click.stop
+                                    @mousedown.stop
                                     wire:change="updateManagementScore({{ $row['id'] }}, $event.target.value)"
                                     wire:loading.attr="disabled"
                                     wire:target="updateManagementScore({{ $row['id'] }}, $event.target.value)"
