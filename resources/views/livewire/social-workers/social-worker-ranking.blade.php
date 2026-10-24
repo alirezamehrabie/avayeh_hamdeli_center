@@ -21,7 +21,7 @@
     class="container mx-auto max-w-7xl p-3 sm:p-5 xl:p-6"
     dir="rtl"
     x-data="{
-        isOpen: @js($showWorkerModal),
+        isOpen: false,
         isLoading: false,
         loadError: null,
         activeReqId: 0,
@@ -38,11 +38,15 @@
             is_active: true
         },
         init() {
-            this.$watch('$wire.rankingMonth', () => this.resetModalState());
-            this.$watch('$wire.rankingYear', () => this.resetModalState());
+            if (this.$wire.showWorkerModal) {
+                this.isOpen = true;
+                this.lockScroll();
+            }
             this.$watch('$wire.showWorkerModal', (val) => {
-                if (!val && this.isOpen) {
+                if (!val && this.isOpen && !this.isLoading) {
                     this.isOpen = false;
+                    this.isLoading = false;
+                    this.loadError = null;
                     this.unlockScroll();
                 }
             });
@@ -53,6 +57,17 @@
             this.loadError = null;
             this.activeReqId++;
             this.unlockScroll();
+            this.worker = {
+                id: null,
+                name: '',
+                code: '',
+                rank: null,
+                score: '0.0',
+                grade: '',
+                accent: 'slate',
+                stars: '0.0',
+                is_active: true
+            };
         },
         extractCardData(cardEl) {
             if (!cardEl) return null;
@@ -152,8 +167,21 @@
         },
         close() {
             this.isOpen = false;
+            this.isLoading = false;
+            this.loadError = null;
             this.activeReqId++;
             this.unlockScroll();
+            this.worker = {
+                id: null,
+                name: '',
+                code: '',
+                rank: null,
+                score: '0.0',
+                grade: '',
+                accent: 'slate',
+                stars: '0.0',
+                is_active: true
+            };
             this.$wire.closeWorkerModal();
         },
         lockScroll() {
@@ -475,7 +503,6 @@
                 data-worker-active="{{ $row['is_active'] ? '1' : '0' }}"
                 data-ranking-year="{{ $this->rankingYear }}"
                 data-ranking-month="{{ $this->rankingMonth }}"
-                @click="handleCardClick($event)"
                 role="button"
                 tabindex="0"
                 class="group cursor-pointer flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-200"

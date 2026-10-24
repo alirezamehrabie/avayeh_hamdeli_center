@@ -232,9 +232,13 @@ class SocialWorkerRanking extends Component
     public function showWorkerInfo(int $workerId, ?int $year = null, ?int $month = null): void
     {
         if ($year !== null && $month !== null) {
-            $this->rankingYear = (int) $year;
-            $this->rankingMonth = max(1, min(12, (int) $month));
-            $this->applyMonthToDateRange();
+            $targetYear = (int) $year;
+            $targetMonth = max(1, min(12, (int) $month));
+            if ($this->rankingYear !== $targetYear || $this->rankingMonth !== $targetMonth) {
+                $this->rankingYear = $targetYear;
+                $this->rankingMonth = $targetMonth;
+                $this->applyMonthToDateRange();
+            }
         }
 
         $this->selectedWorkerId = $workerId;
@@ -262,6 +266,7 @@ class SocialWorkerRanking extends Component
     {
         $this->showWorkerModal = false;
         $this->selectedWorkerId = null;
+        $this->workerModalTab = 'performance';
         unset($this->selectedWorker);
         unset($this->workerPerformance);
     }
@@ -489,7 +494,8 @@ class SocialWorkerRanking extends Component
         ];
     }
 
-    public function getSelectedWorkerProperty(): ?SocialWorker
+    #[Computed]
+    public function selectedWorker(): ?SocialWorker
     {
         if (! $this->selectedWorkerId) {
             return null;

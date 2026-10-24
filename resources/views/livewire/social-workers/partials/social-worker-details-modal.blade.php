@@ -226,13 +226,26 @@
 
             {{-- ۳. رندر محتوای کامل پس از اتمام بارگذاری داده‌های سرور --}}
             <div x-show="!isLoading && !loadError" style="display: none;">
-                @if($selectedWorker)
-                    @if($workerModalTab === 'performance')
-                        @include('livewire.social-workers.partials.social-worker-performance-tab')
-                    @else
-                        @include('livewire.social-workers.partials.social-worker-profile-tab')
+                {{-- لودر انتقال بین زبانه‌ها --}}
+                <div wire:loading wire:target="setWorkerModalTab" class="py-12 text-center">
+                    <div class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 shadow-sm border border-slate-200 text-xs font-bold text-slate-600">
+                        <svg class="h-4 w-4 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                        </svg>
+                        <span>در حال بارگذاری اطلاعات برگه...</span>
+                    </div>
+                </div>
+
+                <div wire:loading.remove wire:target="setWorkerModalTab">
+                    @if($selectedWorker)
+                        @if($workerModalTab === 'performance')
+                            @include('livewire.social-workers.partials.social-worker-performance-tab')
+                        @else
+                            @include('livewire.social-workers.partials.social-worker-profile-tab')
+                        @endif
                     @endif
-                @endif
+                </div>
             </div>
         </div>
     </div>

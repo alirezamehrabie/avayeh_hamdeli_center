@@ -427,6 +427,48 @@ class SocialWorkerDedicatedRankingPageTest extends TestCase
             ->assertSet('rankingErrorMessage', 'تغییر ضریب ارزیابی مدیریت فقط در حالت ارزیابی ماهانه امکان‌پذیر است.');
     }
 
+    public function test_successive_modal_openings_and_tab_state_isolation(): void
+    {
+        $manager = $this->managerUser();
+        $workerA = $this->worker(9440, 'First');
+        $workerB = $this->worker(9441, 'Second');
+
+        $this->actingAs($manager);
+
+        $component = Livewire::test(SocialWorkerRanking::class);
+
+        // ۱. باز کردن مودال مددکار اول
+        $component->call('showWorkerInfo', $workerA->id)
+            ->assertSet('selectedWorkerId', $workerA->id)
+            ->assertSet('showWorkerModal', true)
+            ->assertSet('workerModalTab', 'performance')
+            ->assertSee('First Worker');
+
+        // ۲. تغییر تب به مشخصات و پرونده (profile)
+        $component->call('setWorkerModalTab', 'profile')
+            ->assertSet('workerModalTab', 'profile')
+            ->assertSee('اطلاعات هویتی');
+
+        // ۳. بستن مودال - استیت و تب باید به حالت اولیه ریست شوند
+        $component->call('closeWorkerModal')
+            ->assertSet('selectedWorkerId', null)
+            ->assertSet('showWorkerModal', false)
+            ->assertSet('workerModalTab', 'performance');
+
+        // ۴. باز کردن مودال مددکار دوم - باید تب به عملکرد برگردد و اطلاعات مددکار دوم انتخاب شود
+        $component->call('showWorkerInfo', $workerB->id)
+            ->assertSet('selectedWorkerId', $workerB->id)
+            ->assertSet('showWorkerModal', true)
+            ->assertSet('workerModalTab', 'performance');
+
+        $this->assertSame($workerB->id, $component->instance()->selectedWorker->id);
+
+        // ۵. تغییر مجدد به تب پرونده برای مددکار دوم
+        $component->call('setWorkerModalTab', 'profile')
+            ->assertSet('workerModalTab', 'profile')
+            ->assertSee('اطلاعات هویتی');
+    }
+
     private function managerUser(): User
     {
         return User::factory()->create([
