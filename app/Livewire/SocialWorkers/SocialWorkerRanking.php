@@ -59,6 +59,9 @@ class SocialWorkerRanking extends Component
         if (request()->has('month')) {
             $this->rankingMonth = max(1, min(12, (int) request('month')));
         }
+
+        // محدودسازی پیش‌فرض بازه ارزیابی به ماه جاری شمسی در بارگذاری اولیه
+        $this->applyMonthToDateRange();
     }
 
     public function selectRankingMonth(int $year, int $month): void

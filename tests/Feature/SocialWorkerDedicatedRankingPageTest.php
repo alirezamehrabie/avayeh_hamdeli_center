@@ -35,6 +35,23 @@ class SocialWorkerDedicatedRankingPageTest extends TestCase
         $response->assertSee('لیست مددکاران');
     }
 
+    public function test_dedicated_ranking_page_initializes_with_current_jalali_month_range(): void
+    {
+        $manager = $this->managerUser();
+        $this->actingAs($manager);
+
+        $now = Jalalian::now();
+        $monthDays = (new Jalalian($now->getYear(), $now->getMonth(), 1))->getMonthDays();
+        $expectedFrom = sprintf('%04d/%02d/01', $now->getYear(), $now->getMonth());
+        $expectedTo = sprintf('%04d/%02d/%02d', $now->getYear(), $now->getMonth(), $monthDays);
+
+        Livewire::test(SocialWorkerRanking::class)
+            ->assertSet('rankingYear', (int) $now->getYear())
+            ->assertSet('rankingMonth', (int) $now->getMonth())
+            ->assertSet('rankingDateFrom', $expectedFrom)
+            ->assertSet('rankingDateTo', $expectedTo);
+    }
+
     public function test_advanced_report_ranking_link_opens_in_same_tab(): void
     {
         $manager = $this->managerUser();
