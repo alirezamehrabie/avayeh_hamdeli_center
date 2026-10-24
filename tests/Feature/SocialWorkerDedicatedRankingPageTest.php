@@ -159,6 +159,72 @@ class SocialWorkerDedicatedRankingPageTest extends TestCase
             ->assertSet('showWorkerModal', false);
     }
 
+    public function test_card_markup_includes_event_delegation_and_month_metadata(): void
+    {
+        $manager = $this->managerUser();
+        $worker = $this->worker(9408, 'Arman');
+        $this->actingAs($manager);
+
+        $response = $this->get(route('admin.social-workers.ranking'));
+        $response->assertOk();
+
+        // بررسی اتصال رویداد کلیک به کانتینر والد با Event Delegation
+        $response->assertSee('@click="handleCardClick($event)"', false);
+        // بررسی شناسه و متادیتای کارت برای بازیابی امن در جاوااسکریپت
+        $response->assertSee('data-worker-card="true"', false);
+        $response->assertSee('data-worker-id="'.$worker->id.'"', false);
+        $response->assertSee('data-ranking-year=', false);
+        $response->assertSee('data-ranking-month=', false);
+        $response->assertSee('data-no-modal="true"', false);
+    }
+
+    public function test_filter_and_month_changes_reset_modal_state(): void
+    {
+        $manager = $this->managerUser();
+        $worker = $this->worker(9409, 'Sara');
+        $this->actingAs($manager);
+
+        $component = Livewire::test(SocialWorkerRanking::class)
+            ->call('showWorkerInfo', $worker->id)
+            ->assertSet('selectedWorkerId', $worker->id)
+            ->assertSet('showWorkerModal', true);
+
+        // تغییر ماه ارزیابی باید استیت مودال را ریست کند
+        $component->set('rankingMonth', 5)
+            ->assertSet('selectedWorkerId', null)
+            ->assertSet('showWorkerModal', false);
+
+        // باز کردن مجدد مودال و تست دکمه ماه قبل
+        $component->call('showWorkerInfo', $worker->id)
+            ->assertSet('showWorkerModal', true)
+            ->call('setRankingToPreviousMonth')
+            ->assertSet('selectedWorkerId', null)
+            ->assertSet('showWorkerModal', false);
+
+        // باز کردن مجدد مودال و تست تغییر سال
+        $component->call('showWorkerInfo', $worker->id)
+            ->assertSet('showWorkerModal', true)
+            ->set('rankingYear', 1404)
+            ->assertSet('selectedWorkerId', null)
+            ->assertSet('showWorkerModal', false);
+    }
+
+    public function test_show_worker_info_accepts_custom_year_and_month(): void
+    {
+        $manager = $this->managerUser();
+        $worker = $this->worker(9410, 'Navid');
+        $this->actingAs($manager);
+
+        Livewire::test(SocialWorkerRanking::class)
+            ->call('showWorkerInfo', $worker->id, 1403, 6)
+            ->assertSet('selectedWorkerId', $worker->id)
+            ->assertSet('showWorkerModal', true)
+            ->assertSet('rankingYear', 1403)
+            ->assertSet('rankingMonth', 6)
+            ->assertSet('rankingDateFrom', '1403/06/01')
+            ->assertSet('rankingDateTo', '1403/06/31');
+    }
+
     private function managerUser(): User
     {
         return User::factory()->create([

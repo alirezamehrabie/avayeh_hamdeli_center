@@ -66,6 +66,7 @@ class SocialWorkerRanking extends Component
 
     public function selectRankingMonth(int $year, int $month): void
     {
+        $this->closeWorkerModal();
         $this->rankingYear = $year;
         $this->rankingMonth = max(1, min(12, $month));
         $this->applyMonthToDateRange();
@@ -74,34 +75,52 @@ class SocialWorkerRanking extends Component
 
     public function updatedRankingYear(): void
     {
+        $this->closeWorkerModal();
         $this->applyMonthToDateRange();
         unset($this->ranking);
     }
 
     public function updatedRankingMonth(): void
     {
+        $this->closeWorkerModal();
         $this->applyMonthToDateRange();
+        unset($this->ranking);
+    }
+
+    public function updatedRankingDateFrom(): void
+    {
+        $this->closeWorkerModal();
+        unset($this->ranking);
+    }
+
+    public function updatedRankingDateTo(): void
+    {
+        $this->closeWorkerModal();
         unset($this->ranking);
     }
 
     public function updatedSearch(): void
     {
+        $this->closeWorkerModal();
         unset($this->ranking);
     }
 
     public function updatedStatus(): void
     {
+        $this->closeWorkerModal();
         unset($this->ranking);
     }
 
     public function setRankingToCurrentMonth(): void
     {
+        $this->closeWorkerModal();
         $now = Jalalian::now();
         $this->selectRankingMonth($now->getYear(), $now->getMonth());
     }
 
     public function setRankingToPreviousMonth(): void
     {
+        $this->closeWorkerModal();
         $prev = Jalalian::now()->subMonths(1);
         $this->selectRankingMonth($prev->getYear(), $prev->getMonth());
     }
@@ -115,6 +134,7 @@ class SocialWorkerRanking extends Component
 
     public function clearRankingRange(): void
     {
+        $this->closeWorkerModal();
         $this->rankingDateFrom = '';
         $this->rankingDateTo = '';
         unset($this->ranking);
@@ -155,16 +175,25 @@ class SocialWorkerRanking extends Component
         $this->rankingSuccessMessage = 'ضریب ارزیابی مدیریت با موفقیت بروزرسانی شد.';
     }
 
-    public function showWorkerInfo(int $workerId): void
+    public function showWorkerInfo(int $workerId, ?int $year = null, ?int $month = null): void
     {
+        if ($year !== null && $month !== null) {
+            $this->rankingYear = (int) $year;
+            $this->rankingMonth = max(1, min(12, (int) $month));
+            $this->applyMonthToDateRange();
+        }
+
         $this->selectedWorkerId = $workerId;
         $this->showWorkerModal = true;
         $this->workerModalTab = 'performance';
+
+        unset($this->selectedWorker);
+        unset($this->workerPerformance);
     }
 
-    public function loadWorkerDetails(int $workerId): void
+    public function loadWorkerDetails(int $workerId, ?int $year = null, ?int $month = null): void
     {
-        $this->showWorkerInfo($workerId);
+        $this->showWorkerInfo($workerId, $year, $month);
     }
 
     public function setWorkerModalTab(string $tab): void
@@ -178,6 +207,8 @@ class SocialWorkerRanking extends Component
     {
         $this->showWorkerModal = false;
         $this->selectedWorkerId = null;
+        unset($this->selectedWorker);
+        unset($this->workerPerformance);
     }
 
     #[Computed]

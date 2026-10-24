@@ -37,15 +37,84 @@
             stars: '0.0',
             is_active: true
         },
+        init() {
+            this.$watch('$wire.rankingMonth', () => this.resetModalState());
+            this.$watch('$wire.rankingYear', () => this.resetModalState());
+            this.$watch('$wire.showWorkerModal', (val) => {
+                if (!val && this.isOpen) {
+                    this.isOpen = false;
+                    this.unlockScroll();
+                }
+            });
+        },
+        resetModalState() {
+            this.isOpen = false;
+            this.isLoading = false;
+            this.loadError = null;
+            this.activeReqId++;
+            this.unlockScroll();
+        },
+        extractCardData(cardEl) {
+            if (!cardEl) return null;
+            const id = parseInt(cardEl.getAttribute('data-worker-id'), 10);
+            if (!id || isNaN(id)) return null;
+
+            return {
+                id: id,
+                name: cardEl.getAttribute('data-worker-name') || '',
+                code: cardEl.getAttribute('data-worker-code') || '',
+                rank: cardEl.getAttribute('data-worker-rank') ? parseInt(cardEl.getAttribute('data-worker-rank'), 10) : null,
+                score: cardEl.getAttribute('data-worker-score') || '0.0',
+                grade: cardEl.getAttribute('data-worker-grade') || '',
+                accent: cardEl.getAttribute('data-worker-accent') || 'slate',
+                stars: cardEl.getAttribute('data-worker-stars') || '0.0',
+                is_active: cardEl.getAttribute('data-worker-active') === '1',
+                year: parseInt(cardEl.getAttribute('data-ranking-year'), 10) || null,
+                month: parseInt(cardEl.getAttribute('data-ranking-month'), 10) || null,
+            };
+        },
+        handleCardClick(event) {
+            if (event.target.closest('[data-no-modal], select, button, input, a')) {
+                return;
+            }
+
+            const card = event.target.closest('[data-worker-card]');
+            if (!card) return;
+
+            const data = this.extractCardData(card);
+            if (data) {
+                this.openWorkerModal(data);
+            }
+        },
         openWorkerModal(data) {
-            this.worker = Object.assign({}, data);
+            if (!data || !data.id) return;
+
+            if (this.isOpen && this.worker.id === data.id && this.isLoading) {
+                return;
+            }
+
+            this.worker = Object.assign({
+                id: null,
+                name: '',
+                code: '',
+                rank: null,
+                score: '0.0',
+                grade: '',
+                accent: 'slate',
+                stars: '0.0',
+                is_active: true
+            }, data);
+
             this.isOpen = true;
             this.isLoading = true;
             this.loadError = null;
             this.lockScroll();
 
             const reqId = ++this.activeReqId;
-            this.$wire.showWorkerInfo(data.id)
+            const year = data.year || parseInt(this.$wire.rankingYear, 10) || null;
+            const month = data.month || parseInt(this.$wire.rankingMonth, 10) || null;
+
+            this.$wire.showWorkerInfo(data.id, year, month)
                 .then(() => {
                     if (this.activeReqId === reqId) {
                         this.isLoading = false;
@@ -64,8 +133,10 @@
             this.isLoading = true;
             this.loadError = null;
             const reqId = ++this.activeReqId;
+            const year = parseInt(this.$wire.rankingYear, 10) || null;
+            const month = parseInt(this.$wire.rankingMonth, 10) || null;
 
-            this.$wire.showWorkerInfo(this.worker.id)
+            this.$wire.showWorkerInfo(this.worker.id, year, month)
                 .then(() => {
                     if (this.activeReqId === reqId) {
                         this.isLoading = false;
@@ -325,8 +396,13 @@
         @endif
     </div>
 
-    {{-- شبکه ۳ ستونه در دسکتاپ و تک‌ستونه در موبایل --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+    {{-- شبکه ۳ ستونه در دسکتاپ و تک‌ستونه در موبایل همراه با Event Delegation مطمئن --}}
+    <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"
+        @click="handleCardClick($event)"
+        @keydown.enter="handleCardClick($event)"
+        @keydown.space.prevent="handleCardClick($event)"
+    >
         @forelse($rankingRows as $index => $row)
             @php
                 $rank = $index + 1;
@@ -338,18 +414,20 @@
 
             {{-- کارت رتبه‌بندی مددکار (کلیک روی کل کارت مودال جزئیات را بلافاصله باز می‌کند) --}}
             <div
-                wire:key="worker-card-{{ $row['id'] }}"
-                @click="openWorkerModal({{ json_encode([
-                    'id' => $row['id'],
-                    'name' => $row['full_name'],
-                    'code' => $row['worker_code'],
-                    'rank' => $rank,
-                    'score' => number_format($row['score'], 1),
-                    'grade' => $row['grade']['label'],
-                    'accent' => $row['grade']['accent'],
-                    'stars' => number_format($row['stars'], 1),
-                    'is_active' => (bool) $row['is_active'],
-                ]) }})"
+                wire:key="worker-card-{{ $this->rankingYear }}-{{ $this->rankingMonth }}-{{ $row['id'] }}"
+                data-worker-card="true"
+                data-worker-id="{{ $row['id'] }}"
+                data-worker-name="{{ $row['full_name'] }}"
+                data-worker-code="{{ $row['worker_code'] }}"
+                data-worker-rank="{{ $rank }}"
+                data-worker-score="{{ number_format($row['score'], 1) }}"
+                data-worker-grade="{{ $row['grade']['label'] }}"
+                data-worker-accent="{{ $row['grade']['accent'] }}"
+                data-worker-stars="{{ number_format($row['stars'], 1) }}"
+                data-worker-active="{{ $row['is_active'] ? '1' : '0' }}"
+                data-ranking-year="{{ $this->rankingYear }}"
+                data-ranking-month="{{ $this->rankingMonth }}"
+                @click="handleCardClick($event)"
                 role="button"
                 tabindex="0"
                 class="group cursor-pointer flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-200"
@@ -428,6 +506,7 @@
                     @mousedown.stop
                     class="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 print:hidden no-print"
                     data-no-print
+                    data-no-modal="true"
                 >
                     <div class="flex items-center gap-1.5" @click.stop @mousedown.stop>
                         <span class="text-[10px] font-black text-slate-600">ضریب مدیریت:</span>
