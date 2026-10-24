@@ -95,19 +95,9 @@
                 </p>
             </div>
 
-            {{-- ابزارهای سریع هدر: چاپ/اسکرین‌شات و خلاصه --}}
-            <div class="flex flex-wrap items-center gap-2 lg:shrink-0 print:hidden no-print">
-                <button
-                    type="button"
-                    onclick="window.print()"
-                    title="چاپ یا ذخیره صفحه (مناسب ثبت اسکرین‌شات و گزارش)"
-                    class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                    <i class="bi bi-printer text-sm"></i>
-                    <span>چاپ / خروجی</span>
-                </button>
-
-                <div class="inline-flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-xs font-extrabold text-indigo-900">
+            {{-- آمار خلاصه هدر --}}
+            <div class="flex flex-wrap items-center gap-2 lg:shrink-0">
+                <div class="inline-flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3.5 py-2 text-xs font-extrabold text-indigo-900">
                     <span>مددکاران: {{ number_format($ranking['evaluated']) }} نفر</span>
                     <span class="text-indigo-300">|</span>
                     <span>میانگین امتیاز: {{ number_format($ranking['average_score'], 1) }}</span>
