@@ -19,7 +19,6 @@
 
                 <a
                     href="{{ route('admin.social-workers.ranking') }}"
-                    target="_blank"
                     class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-200"
                 >
                     <i class="bi bi-trophy-fill text-xs"></i>
@@ -37,7 +36,6 @@
 
             <div class="flex items-center gap-2 lg:flex-shrink-0">
                 <a href="{{ route('admin.social-workers.ranking') }}"
-                   target="_blank"
                    title="مشاهده صفحه رتبه‌بندی عملکرد مددکاران"
                    class="group flex h-11 w-11 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600 transition hover:bg-amber-100 hover:text-amber-700">
                     <i class="bi bi-trophy-fill text-xl"></i>

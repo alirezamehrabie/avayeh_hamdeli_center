@@ -126,6 +126,8 @@ class DashboardHome extends Component
             $this->activeSection = 'beneficiary-case-file';
         } elseif (! request()->has('section') && request()->routeIs('admin.social-workers.announcements')) {
             $this->activeSection = 'social-worker-announcements';
+        } elseif (! request()->has('section') && request()->routeIs('admin.social-workers.ranking')) {
+            $this->activeSection = 'social-worker-ranking';
         }
         $this->normalizeActiveSection();
         $this->syncSectionContext();
@@ -269,6 +271,7 @@ class DashboardHome extends Component
         if ($user?->can('access-admin-panel')) {
             $validSections[] = 'advanced-operator-report';
             $validSections[] = 'special-features-id-card-scanner';
+            $validSections[] = 'social-worker-ranking';
         }
 
         if ($user?->can('full-access')) {
@@ -284,6 +287,7 @@ class DashboardHome extends Component
                 'social-worker-edit',
                 'social-worker-attendance-monitor',
                 'social-worker-announcements',
+                'social-worker-ranking',
                 'guardians-list',
                 'guardians-block-list',
                 'guardian-edit',

@@ -29,6 +29,21 @@ class SocialWorkerDedicatedRankingPageTest extends TestCase
         $response = $this->get(route('admin.social-workers.ranking'));
         $response->assertOk();
         $response->assertSee('رتبه‌بندی و ضریب ارزیابی مدیریت مددکاران اجتماعی');
+        $response->assertSee('بازگشت به گزارش پیشرفته');
+        // بررسی بارگذاری در قالب اصلی داشبورد همراه با سایدبار
+        $response->assertSee('dashboard-sidebar');
+        $response->assertSee('لیست مددکاران');
+    }
+
+    public function test_advanced_report_ranking_link_opens_in_same_tab(): void
+    {
+        $manager = $this->managerUser();
+        $this->actingAs($manager);
+
+        $response = $this->get(route('admin.dashboard', ['section' => 'advanced-social-worker-report']));
+        $response->assertOk();
+        $response->assertSee(route('admin.social-workers.ranking'));
+        $response->assertDontSee('href="'.route('admin.social-workers.ranking').'" target="_blank"', false);
     }
 
     public function test_dedicated_ranking_page_renders_ranked_cards(): void

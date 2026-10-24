@@ -533,6 +533,10 @@
                         <livewire:social-workers.advanced-social-worker-report :key="'advanced-social-worker-report'" />
                         @break
 
+                    @case('social-worker-ranking')
+                        <livewire:social-workers.social-worker-ranking :key="'social-worker-ranking'" />
+                        @break
+
                     @case('advanced-gate-report')
                         <livewire:admin.gate-report :key="'advanced-gate-report'" />
                         @break

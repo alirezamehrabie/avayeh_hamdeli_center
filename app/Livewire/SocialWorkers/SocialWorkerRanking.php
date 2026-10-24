@@ -13,7 +13,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.admin')]
 class SocialWorkerRanking extends Component
 {
     /** حداکثر تعداد مددکاران در نمایش رتبه‌بندی */

@@ -73,10 +73,10 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <a
                         href="{{ route('admin.dashboard', ['section' => 'advanced-social-worker-report']) }}"
-                        class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 print:hidden no-print"
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 print:hidden no-print"
                         title="بازگشت به گزارش پیشرفته مددکاران"
                     >
-                        <i class="bi bi-arrow-right"></i>
+                        <i class="bi bi-arrow-right text-sm"></i>
                         <span>بازگشت به گزارش پیشرفته</span>
                     </a>
 

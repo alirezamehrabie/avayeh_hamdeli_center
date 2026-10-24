@@ -52,9 +52,9 @@
         $activeSection = $activeSection ?? null;
         $isActive = fn ($sections) => in_array($activeSection, (array) $sections, true);
         $peopleOpen = $dashboardMode ? $isActive(['people-fast-create', 'people-list', 'people-incomplete-cases', 'people-block-list', 'person-create', 'person-edit', 'beneficiary-case-file', 'people-edit-field', 'people-edit-field-need-level']) : request()->routeIs('people.*');
-        $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit', 'social-worker-attendance-monitor', 'social-worker-announcements']) : request()->routeIs('social-workers.*');
+        $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit', 'social-worker-attendance-monitor', 'social-worker-announcements', 'social-worker-ranking']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
-        $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) : false;
+        $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report', 'social-worker-ranking']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-delivery-social-worker', 'service-delivery-beneficiary', 'service-archive']) : false;
         $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner', 'activity-operator-assignments']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
@@ -113,6 +113,7 @@
             ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
+                ['section' => 'social-worker-ranking', 'label' => 'رتبه‌بندی عملکرد'],
                 ['section' => 'social-worker-announcements', 'label' => 'ابلاغ پیام‌ها', 'icon' => 'fa fa-bullhorn'],
                 ['section' => 'social-worker-attendance-monitor', 'label' => 'پایش حضور و غیاب'],
                 ['section' => 'social-worker-create', 'label' => 'ثبت مددکار جدید'],
@@ -148,7 +149,7 @@
             'reports' => [
                 ['section' => 'advanced-beneficiary-report', 'label' => 'گزارش مددجویان', 'visible' => $user?->can('full-access')],
                 ['section' => 'advanced-supervisor-report', 'label' => 'گزارش سرپرستان', 'visible' => $user?->can('full-access')],
-                ['section' => 'advanced-social-worker-report', 'label' => 'گزارش مددکاران', 'visible' => $user?->can('full-access')],
+                ['section' => 'advanced-social-worker-report', 'label' => 'گزارش مددکاران', 'visible' => $user?->can('full-access'), 'active' => ['advanced-social-worker-report', 'social-worker-ranking']],
                 ['section' => 'advanced-service-report', 'label' => 'گزارش خدمات', 'visible' => $user?->can('full-access')],
                 ['section' => 'advanced-operator-report', 'label' => 'گزارش اپراتورها'],
                 ['section' => 'advanced-gate-report', 'label' => 'گزارش گیت‌ها', 'visible' => $user?->can('full-access')],
