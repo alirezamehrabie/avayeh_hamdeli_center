@@ -225,6 +225,125 @@ class SocialWorkerDedicatedRankingPageTest extends TestCase
             ->assertSet('rankingDateTo', '1403/06/31');
     }
 
+    public function test_guardians_relation_is_lazy_loaded_only_on_profile_tab_and_limited(): void
+    {
+        $manager = $this->managerUser();
+        $worker = $this->worker(9411, 'Sina');
+
+        // ثبت ۷۰ خانوار برای مددکار
+        for ($i = 1; $i <= 70; $i++) {
+            \App\Models\Guardian::query()->create([
+                'social_worker_id' => $worker->id,
+                'first_name' => "Family {$i}",
+                'last_name' => 'Guardian',
+                'guardian_code' => 5000 + $i,
+            ]);
+        }
+
+        $this->actingAs($manager);
+
+        $component = Livewire::test(SocialWorkerRanking::class)
+            ->call('showWorkerInfo', $worker->id);
+
+        // در تب پیش‌فرض (performance)، رابطه guardians نباید لود شده باشد
+        $selectedWorker = $component->instance()->selectedWorker;
+        $this->assertNotNull($selectedWorker);
+        $this->assertFalse($selectedWorker->relationLoaded('guardians'));
+        $this->assertSame(70, (int) $selectedWorker->guardians_count);
+
+        // با سوئیچ به تب profile، رابطه فقط تا سقف ۶۰ رکورد لود می‌شود
+        $component->call('setWorkerModalTab', 'profile');
+        $selectedWorkerProfile = $component->instance()->selectedWorker;
+        $this->assertNotNull($selectedWorkerProfile);
+        $this->assertTrue($selectedWorkerProfile->relationLoaded('guardians'));
+        $this->assertCount(60, $selectedWorkerProfile->guardians);
+        $this->assertSame(70, (int) $selectedWorkerProfile->guardians_count);
+    }
+
+    public function test_url_query_string_syncs_with_month_year_and_search(): void
+    {
+        $manager = $this->managerUser();
+        $this->actingAs($manager);
+
+        // ۱. بررسی مقداردهی اولیه از کوئری‌استرینگ URL
+        Livewire::withQueryParams([
+            'year' => 1403,
+            'month' => 7,
+            'q' => 'Mohsen',
+            'status' => 'active',
+        ])
+            ->test(SocialWorkerRanking::class)
+            ->assertSet('rankingYear', 1403)
+            ->assertSet('rankingMonth', 7)
+            ->assertSet('search', 'Mohsen')
+            ->assertSet('status', 'active')
+            ->assertSet('rankingDateFrom', '1403/07/01')
+            ->assertSet('rankingDateTo', '1403/07/30');
+
+        // ۲. بررسی به‌روزرسانی پارامترهای URL با تغییر مقادیر در کامپوننت
+        $component = Livewire::test(SocialWorkerRanking::class)
+            ->set('search', 'Ali')
+            ->set('rankingYear', 1402)
+            ->set('rankingMonth', 11);
+
+        $this->assertSame('Ali', $component->get('search'));
+        $this->assertSame(1402, $component->get('rankingYear'));
+        $this->assertSame(11, $component->get('rankingMonth'));
+    }
+
+    public function test_spa_back_button_and_grid_loading_indicators_are_present(): void
+    {
+        $manager = $this->managerUser();
+        $this->actingAs($manager);
+
+        $response = $this->get(route('admin.social-workers.ranking'));
+        $response->assertOk();
+
+        // بررسی دکمه بازگشت SPA بدون ریلود کامل مرورگر
+        $response->assertSee('wire:click="$dispatch(\'open-dashboard-section\', { section: \'advanced-social-worker-report\' })"', false);
+        $response->assertSee('بازگشت به گزارش پیشرفته');
+
+        // بررسی نشانگر بارگذاری و کلاس غیرفعال‌سازی موقت کارت‌ها
+        $response->assertSee('در حال به‌روزرسانی نتایج و شاخص‌های ارزیابی عملکرد...');
+        $response->assertSee('wire:loading.class="opacity-50 pointer-events-none"', false);
+    }
+
+    public function test_header_statistics_distinguishes_active_from_total_and_shows_truncation_warning(): void
+    {
+        $manager = $this->managerUser();
+        // ۱ مددکار فعال با فعالیت
+        $activeWorker = $this->worker(9420, 'Active');
+        [$service, $category] = $this->serviceWithCategory($manager);
+        $assignedAt = Carbon::parse('2026-08-01 09:00:00');
+        $this->allocate($service, $category, $activeWorker, 10, $assignedAt);
+        $this->delivery($manager, $service, $category, $activeWorker, 10, '2026-08-01', $assignedAt->copy()->addHour());
+
+        // ۱ مددکار بدون فعالیت
+        $this->worker(9421, 'Idle');
+
+        $this->actingAs($manager);
+
+        $response = $this->get(route('admin.social-workers.ranking'));
+        $response->assertOk();
+
+        // تفکیک آمار هدر
+        $response->assertSee('دارای فعالیت:');
+        $response->assertSee('کل مددکاران:');
+        $response->assertSee('میانگین امتیاز:');
+
+        // ایجاد مددکاران فراتر از سقف ۱۰۰ نفر برای بررسی هشدار سقف رتبه‌بندی
+        for ($i = 1; $i <= 101; $i++) {
+            $this->worker(9500 + $i, "Bulk{$i}");
+        }
+
+        $component = Livewire::test(SocialWorkerRanking::class);
+        $ranking = $component->instance()->ranking();
+
+        $this->assertTrue($ranking['truncated']);
+        $this->assertCount(100, $ranking['rows']);
+        $component->assertSee('مددکار برتر نمایش داده شده‌اند');
+    }
+
     private function managerUser(): User
     {
         return User::factory()->create([

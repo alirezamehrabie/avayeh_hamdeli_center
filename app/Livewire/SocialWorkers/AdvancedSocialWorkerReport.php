@@ -345,6 +345,7 @@ class AdvancedSocialWorkerReport extends Component
         }
 
         $this->workerModalTab = $tab;
+        unset($this->selectedWorker);
     }
 
     public function closeWorkerModal(): void
@@ -613,20 +614,26 @@ class AdvancedSocialWorkerReport extends Component
             return null;
         }
 
+        $with = [
+            'district:id,name',
+            'occupation:id,name',
+            'academicLevel:id,title',
+        ];
+
+        if ($this->workerModalTab === 'profile') {
+            $with['guardians'] = fn ($q) => $q
+                ->select('id', 'social_worker_id', 'first_name', 'last_name', 'guardian_code')
+                ->withCount('people')
+                ->orderByDesc('id')
+                ->limit(60);
+        }
+
         return SocialWorker::query()
             ->withoutGlobalScope('active')
             ->withTrashed()
             ->withCount(['guardians', 'people', 'services', 'serviceDeliveries'])
             ->withSum('serviceDeliveries as service_deliveries_sum_delivered_total_value', 'delivered_total_value')
-            ->with([
-                'district:id,name',
-                'occupation:id,name',
-                'academicLevel:id,title',
-                'guardians' => fn ($q) => $q
-                    ->select('id', 'social_worker_id', 'first_name', 'last_name', 'guardian_code')
-                    ->withCount('people')
-                    ->orderByDesc('id'),
-            ])
+            ->with($with)
             ->find($this->selectedWorkerId);
     }
 

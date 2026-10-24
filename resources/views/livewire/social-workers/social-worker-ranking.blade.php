@@ -221,14 +221,15 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                    <a
-                        href="{{ route('admin.dashboard', ['section' => 'advanced-social-worker-report']) }}"
+                    <button
+                        type="button"
+                        wire:click="$dispatch('open-dashboard-section', { section: 'advanced-social-worker-report' })"
                         class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 print:hidden no-print"
                         title="بازگشت به گزارش پیشرفته مددکاران"
                     >
                         <i class="bi bi-arrow-right text-sm"></i>
                         <span>بازگشت به گزارش پیشرفته</span>
-                    </a>
+                    </button>
 
                     <span class="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
                         <i class="bi bi-trophy-fill text-[11px]"></i>
@@ -245,12 +246,20 @@
                 </p>
             </div>
 
-            {{-- آمار خلاصه هدر --}}
+            {{-- آمار خلاصه هدر (تفکیک مددکاران دارای فعالیت، کل مشمولین و میانگین امتیاز) --}}
             <div class="flex flex-wrap items-center gap-2 lg:shrink-0">
-                <div class="inline-flex items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3.5 py-2 text-xs font-extrabold text-indigo-900">
-                    <span>مددکاران: {{ number_format($ranking['evaluated']) }} نفر</span>
+                <div class="inline-flex items-center gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3.5 py-2 text-xs font-extrabold text-indigo-900 shadow-sm">
+                    <span title="تعداد مددکاران دارای داده‌های فعالیت در این بازه">
+                        دارای فعالیت: <span class="font-black text-indigo-700">{{ number_format($ranking['active_evaluated'] ?? 0) }}</span> نفر
+                    </span>
                     <span class="text-indigo-300">|</span>
-                    <span>میانگین امتیاز: {{ number_format($ranking['average_score'], 1) }}</span>
+                    <span title="تعداد کل مددکاران مشمول فیلتر">
+                        کل مددکاران: <span class="font-black text-slate-700">{{ number_format($ranking['total'] ?? $ranking['evaluated']) }}</span> نفر
+                    </span>
+                    <span class="text-indigo-300">|</span>
+                    <span title="میانگین امتیاز مددکاران دارای فعالیت">
+                        میانگین امتیاز: <span class="font-black text-amber-700">{{ number_format($ranking['average_score'], 1) }}</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -396,9 +405,24 @@
         @endif
     </div>
 
-    {{-- شبکه ۳ ستونه در دسکتاپ و تک‌ستونه در موبایل همراه با Event Delegation مطمئن --}}
+    {{-- نوار نشانگر وضعیت بارگذاری شبکه رتبه‌بندی --}}
     <div
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"
+        wire:loading
+        wire:target="rankingMonth, rankingYear, search, status, rankingDateFrom, rankingDateTo, setRankingToCurrentMonth, setRankingToPreviousMonth, clearRankingRange"
+        class="mb-3 flex items-center justify-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/90 py-2.5 px-4 text-xs font-bold text-indigo-700 shadow-sm transition"
+    >
+        <svg class="h-4 w-4 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+        </svg>
+        <span>در حال به‌روزرسانی نتایج و شاخص‌های ارزیابی عملکرد...</span>
+    </div>
+
+    {{-- شبکه ۳ ستونه در دسکتاپ و تک‌ستونه در موبایل همراه با Event Delegation مطمئن و بازخورد بصری بارگذاری --}}
+    <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 transition-opacity duration-200"
+        wire:loading.class="opacity-50 pointer-events-none"
+        wire:target="rankingMonth, rankingYear, search, status, rankingDateFrom, rankingDateTo, setRankingToCurrentMonth, setRankingToPreviousMonth, clearRankingRange"
         @click="handleCardClick($event)"
         @keydown.enter="handleCardClick($event)"
         @keydown.space.prevent="handleCardClick($event)"
@@ -567,6 +591,23 @@
             </div>
         @endforelse
     </div>
+
+    {{-- هشدار سقف نمایش ۱۰۰ مددکار برتر --}}
+    @if(!empty($ranking['truncated']))
+        <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs font-bold text-amber-900 shadow-sm print:hidden no-print">
+            <div class="flex items-center gap-2.5">
+                <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+                    <i class="bi bi-info-circle-fill text-sm"></i>
+                </span>
+                <p>
+                    فقط <span class="font-black text-amber-950">{{ number_format($ranking['limit'] ?? 100) }}</span> مددکار برتر نمایش داده شده‌اند. برای مشاهده سایر مددکاران، فیلتر وضعیت یا جستجو را محدودتر کنید.
+                </p>
+            </div>
+            <span class="inline-flex shrink-0 items-center rounded-xl bg-amber-200/60 px-3 py-1 text-[11px] font-black text-amber-900 ring-1 ring-amber-300">
+                مجموع: {{ number_format($ranking['total'] ?? $ranking['evaluated']) }} مددکار
+            </span>
+        </div>
+    @endif
 
     {{-- مودال جزئیات پرونده و ارزیابی تفصیلی عملکرد مددکار --}}
     @include('livewire.social-workers.partials.social-worker-details-modal')

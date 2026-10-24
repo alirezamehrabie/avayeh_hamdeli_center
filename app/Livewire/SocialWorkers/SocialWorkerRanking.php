@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.admin')]
@@ -19,13 +20,17 @@ class SocialWorkerRanking extends Component
     /** حداکثر تعداد مددکاران در نمایش رتبه‌بندی */
     public const RANKING_LIMIT = 100;
 
+    #[Url(as: 'q', except: '')]
     public string $search = '';
 
+    #[Url(as: 'status', except: 'all')]
     public string $status = 'all'; // all, active, inactive
 
-    public int $rankingYear;
+    #[Url(as: 'year')]
+    public int $rankingYear = 0;
 
-    public int $rankingMonth;
+    #[Url(as: 'month')]
+    public int $rankingMonth = 0;
 
     public string $rankingDateFrom = '';
 
@@ -49,8 +54,13 @@ class SocialWorkerRanking extends Component
     public function mount(): void
     {
         $now = Jalalian::now();
-        $this->rankingYear = (int) $now->getYear();
-        $this->rankingMonth = (int) $now->getMonth();
+
+        if (empty($this->rankingYear)) {
+            $this->rankingYear = (int) $now->getYear();
+        }
+        if (empty($this->rankingMonth)) {
+            $this->rankingMonth = (int) $now->getMonth();
+        }
 
         // در صورت ارسال پارامترهای سال یا ماه از طریق کوئری استرینگ
         if (request()->has('year')) {
@@ -59,6 +69,8 @@ class SocialWorkerRanking extends Component
         if (request()->has('month')) {
             $this->rankingMonth = max(1, min(12, (int) request('month')));
         }
+
+        $this->rankingMonth = max(1, min(12, $this->rankingMonth));
 
         // محدودسازی پیش‌فرض بازه ارزیابی به ماه جاری شمسی در بارگذاری اولیه
         $this->applyMonthToDateRange();
@@ -200,6 +212,7 @@ class SocialWorkerRanking extends Component
     {
         if (isset($this->workerModalTabs[$tab])) {
             $this->workerModalTab = $tab;
+            unset($this->selectedWorker);
         }
     }
 
@@ -301,9 +314,11 @@ class SocialWorkerRanking extends Component
             return [
                 'rows' => [],
                 'evaluated' => 0,
+                'active_evaluated' => 0,
                 'total' => 0,
                 'average_score' => 0.0,
                 'truncated' => false,
+                'limit' => self::RANKING_LIMIT,
             ];
         }
 
@@ -363,9 +378,11 @@ class SocialWorkerRanking extends Component
         return [
             'rows' => $rows->take(self::RANKING_LIMIT)->values()->all(),
             'evaluated' => $rows->count(),
+            'active_evaluated' => $evaluatedCount,
             'total' => $total,
             'average_score' => $avgScore,
             'truncated' => $rows->count() > self::RANKING_LIMIT,
+            'limit' => self::RANKING_LIMIT,
         ];
     }
 
@@ -375,20 +392,26 @@ class SocialWorkerRanking extends Component
             return null;
         }
 
+        $with = [
+            'district:id,name',
+            'occupation:id,name',
+            'academicLevel:id,title',
+        ];
+
+        if ($this->workerModalTab === 'profile') {
+            $with['guardians'] = fn ($q) => $q
+                ->select('id', 'social_worker_id', 'first_name', 'last_name', 'guardian_code')
+                ->withCount('people')
+                ->orderByDesc('id')
+                ->limit(60);
+        }
+
         return SocialWorker::query()
             ->withoutGlobalScope('active')
             ->withTrashed()
             ->withCount(['guardians', 'people', 'services', 'serviceDeliveries'])
             ->withSum('serviceDeliveries as service_deliveries_sum_delivered_total_value', 'delivered_total_value')
-            ->with([
-                'district:id,name',
-                'occupation:id,name',
-                'academicLevel:id,title',
-                'guardians' => fn ($q) => $q
-                    ->select('id', 'social_worker_id', 'first_name', 'last_name', 'guardian_code')
-                    ->withCount('people')
-                    ->orderByDesc('id'),
-            ])
+            ->with($with)
             ->find($this->selectedWorkerId);
     }
 

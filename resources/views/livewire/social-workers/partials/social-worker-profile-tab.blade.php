@@ -35,19 +35,31 @@
 @endforeach
 
 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    @php
+        $guardians = $selectedWorker->relationLoaded('guardians')
+            ? $selectedWorker->guardians
+            : $selectedWorker->guardians()
+                ->select('id', 'social_worker_id', 'first_name', 'last_name', 'guardian_code')
+                ->withCount('people')
+                ->orderByDesc('id')
+                ->limit(60)
+                ->get();
+        $totalGuardiansCount = (int) ($selectedWorker->guardians_count ?? $guardians->count());
+    @endphp
+
     <div class="mb-3 flex items-start justify-between gap-3">
         <div class="min-w-0">
             <p class="text-sm font-extrabold text-slate-900">خانوارهای تحت پوشش</p>
             <p class="mt-1 text-xs leading-5 text-slate-500">فهرست خانوارهای تخصیص‌یافته به این مددکار</p>
         </div>
         <span class="inline-flex items-center justify-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
-            {{ number_format((int) ($selectedWorker->guardians_count ?? 0)) }} خانوار
+            {{ number_format($totalGuardiansCount) }} خانوار
         </span>
     </div>
 
-    @if($selectedWorker->guardians->isNotEmpty())
+    @if($guardians->isNotEmpty())
         <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            @foreach($selectedWorker->guardians->take(60) as $guardian)
+            @foreach($guardians->take(60) as $guardian)
                 <div class="rounded-xl border border-slate-100 bg-slate-50 p-3">
                     <p class="truncate text-sm font-bold text-slate-900">
                         {{ trim(($guardian->first_name ?? '') . ' ' . ($guardian->last_name ?? '')) ?: 'بدون نام' }}
@@ -59,8 +71,10 @@
                 </div>
             @endforeach
         </div>
-        @if($selectedWorker->guardians->count() > 60)
-            <p class="mt-3 text-center text-[11px] text-slate-500">و {{ number_format($selectedWorker->guardians->count() - 60) }} خانوار دیگر…</p>
+        @if($totalGuardiansCount > $guardians->count())
+            <p class="mt-3 text-center text-[11px] text-slate-500">
+                نمایش {{ number_format($guardians->count()) }} خانوار اخیر از مجموع {{ number_format($totalGuardiansCount) }} خانوار
+            </p>
         @endif
     @else
         <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-xs text-slate-500">
