@@ -18,9 +18,33 @@
 @endphp
 
 <div class="container mx-auto max-w-7xl p-3 sm:p-5 xl:p-6" dir="rtl">
+    {{-- استایل‌های بهینه‌سازی چاپ و خروجی PDF --}}
+    <style>
+        @media print {
+            .print\:hidden, .no-print, [data-no-print] {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: #0f172a !important;
+            }
+            .container {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .shadow-sm, .shadow-md, .shadow-2xl {
+                box-shadow: none !important;
+            }
+            .border {
+                border-color: #e2e8f0 !important;
+            }
+        }
+    </style>
+
     {{-- نوار هشدار پایان ماه شمسی برای مدیریت --}}
     @if($isManager && $this->isEndOfJalaliMonth)
-        <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-gradient-to-l from-amber-50 to-orange-50 p-3.5 text-amber-950 shadow-sm print:hidden">
+        <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-gradient-to-l from-amber-50 to-orange-50 p-3.5 text-amber-950 shadow-sm print:hidden no-print">
             <div class="flex items-center gap-3">
                 <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
                     <i class="bi bi-bell-fill text-base animate-bounce"></i>
@@ -49,7 +73,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     <a
                         href="{{ route('admin.dashboard', ['section' => 'advanced-social-worker-report']) }}"
-                        class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 print:hidden"
+                        class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 print:hidden no-print"
                         title="بازگشت به گزارش پیشرفته مددکاران"
                     >
                         <i class="bi bi-arrow-right"></i>
@@ -66,13 +90,13 @@
                     رتبه‌بندی و ضریب ارزیابی مدیریت مددکاران اجتماعی
                 </h1>
                 <p class="mt-1 text-xs font-semibold text-slate-500">
-                    محاسبه امتیاز نهایی، رتبه‌بندی عملکرد بر اساس داده‌های توزیع و تحویل، و اعمال ضریب مدیریت در ماه
+                    رتبه‌بندی عملکرد بر اساس شاخص‌های فعالیت و سرعت واکنش در ماه
                     <span class="font-extrabold text-amber-700">{{ $this->rankingMonthName }} {{ $this->rankingYear }}</span>
                 </p>
             </div>
 
             {{-- ابزارهای سریع هدر: چاپ/اسکرین‌شات و خلاصه --}}
-            <div class="flex flex-wrap items-center gap-2 lg:shrink-0 print:hidden">
+            <div class="flex flex-wrap items-center gap-2 lg:shrink-0 print:hidden no-print">
                 <button
                     type="button"
                     onclick="window.print()"
@@ -92,7 +116,7 @@
         </div>
 
         {{-- نوار ابزار فیلتر و انتخاب ماه (فشرده و بهینه) --}}
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3.5">
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3.5 print:hidden no-print">
             {{-- انتخاب ماه و سال ارزیابی --}}
             <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center gap-1.5 text-xs font-black text-slate-700">
@@ -138,7 +162,7 @@
             </div>
 
             {{-- فیلترهای تکمیلی (جستجو، وضعیت، بازه تاریخی) --}}
-            <div class="flex flex-wrap items-center gap-2 print:hidden">
+            <div class="flex flex-wrap items-center gap-2">
                 <div class="relative w-40 sm:w-48">
                     <input
                         type="text"
@@ -219,13 +243,13 @@
 
         {{-- پیام‌های تاییدیه یا خطای اعمال ضریب --}}
         @if($rankingSuccessMessage)
-            <div class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200">
+            <div class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200 print:hidden no-print">
                 <i class="bi bi-check-circle-fill text-emerald-600"></i>
                 <span>{{ $rankingSuccessMessage }}</span>
             </div>
         @endif
         @if($rankingErrorMessage)
-            <div class="mt-3 flex items-center gap-2 rounded-xl bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-800 ring-1 ring-rose-200">
+            <div class="mt-3 flex items-center gap-2 rounded-xl bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-800 ring-1 ring-rose-200 print:hidden no-print">
                 <i class="bi bi-exclamation-triangle-fill text-rose-600"></i>
                 <span>{{ $rankingErrorMessage }}</span>
             </div>
@@ -238,34 +262,35 @@
             @php
                 $rank = $index + 1;
                 $palette = $accentPalette[$row['grade']['accent']] ?? $accentPalette['slate'];
-                $gaugeCircumference = 2 * M_PI * 18;
+                $gaugeRadius = 22;
+                $gaugeCircumference = 2 * M_PI * $gaugeRadius;
                 $gaugeOffset = $gaugeCircumference * (1 - min(100, max(0, $row['score'])) / 100);
             @endphp
 
+            {{-- کارت رتبه‌بندی مددکار (کلیک روی کل کارت مودال جزئیات را باز می‌کند) --}}
             <div
                 wire:key="worker-card-{{ $row['id'] }}"
-                class="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+                wire:click="showWorkerInfo({{ $row['id'] }})"
+                role="button"
+                tabindex="0"
+                class="group cursor-pointer flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                title="مشاهده جزئیات ارزیابی عملکرد {{ $row['full_name'] }}"
             >
                 <div>
-                    {{-- بخش سربرگ کارت: رتبه، گیج نمره و نام مددکار --}}
-                    <div class="flex items-start justify-between gap-2.5">
+                    {{-- بخش سربرگ کارت: رتبه، اطلاعات مددکار، و نمودار دایره‌ای برجسته --}}
+                    <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                            {{-- نشان رتبه --}}
-                            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-black shadow-sm {{ isset($medalAccents[$rank]) ? 'bg-gradient-to-br ' . $medalAccents[$rank] : 'bg-slate-100 text-slate-600' }}">
+                            {{-- نشان رتبه با گرادیان مدال برای ۳ رتبه اول --}}
+                            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black shadow-sm {{ isset($medalAccents[$rank]) ? 'bg-gradient-to-br ' . $medalAccents[$rank] : 'bg-slate-100 text-slate-600' }}">
                                 {{ $rank }}
                             </span>
 
-                            {{-- اطلاعات نام و کد --}}
+                            {{-- نام و کد مددکار --}}
                             <div class="min-w-0 flex-1">
-                                <button
-                                    type="button"
-                                    wire:click="showWorkerInfo({{ $row['id'] }})"
-                                    class="truncate text-right text-xs sm:text-[13px] font-black text-slate-900 transition hover:text-indigo-600 focus:outline-none"
-                                    title="{{ $row['full_name'] }} (مشاهده جزئیات عملکرد)"
-                                >
+                                <h3 class="truncate text-sm sm:text-[14px] font-black text-slate-900 group-hover:text-indigo-600 transition">
                                     {{ $row['full_name'] }}
-                                </button>
-                                <div class="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+                                </h3>
+                                <div class="mt-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
                                     <span dir="ltr">کد: {{ $row['worker_code'] }}</span>
                                     @unless($row['is_active'])
                                         <span class="rounded-full bg-rose-50 px-1.5 py-0.2 text-[9px] font-bold text-rose-700 ring-1 ring-rose-100">غیرفعال</span>
@@ -274,78 +299,63 @@
                             </div>
                         </div>
 
-                        {{-- گیج دایره‌ای امتیاز نهایی --}}
-                        <div class="relative h-11 w-11 shrink-0" title="امتیاز نهایی: {{ number_format($row['score'], 1) }}">
-                            <svg class="h-11 w-11 -rotate-90" viewBox="0 0 44 44">
-                                <circle cx="22" cy="22" r="18" fill="none" stroke="#f1f5f9" stroke-width="4"></circle>
+                        {{-- نمودار دایره‌ای امتیاز با تمرکز بصری بالا و اندازه بزرگ‌تر --}}
+                        <div class="relative h-14 w-14 shrink-0" title="امتیاز نهایی: {{ number_format($row['score'], 1) }} از ۱۰۰">
+                            <svg class="h-14 w-14 -rotate-90" viewBox="0 0 54 54">
+                                <circle cx="27" cy="27" r="{{ $gaugeRadius }}" fill="none" stroke="#f1f5f9" stroke-width="4.5"></circle>
                                 <circle
-                                    cx="22" cy="22" r="18" fill="none"
+                                    cx="27" cy="27" r="{{ $gaugeRadius }}" fill="none"
                                     stroke="{{ $palette['stroke'] }}"
-                                    stroke-width="4"
+                                    stroke-width="4.5"
                                     stroke-linecap="round"
                                     stroke-dasharray="{{ round($gaugeCircumference, 2) }}"
                                     stroke-dashoffset="{{ round($gaugeOffset, 2) }}"
                                 ></circle>
                             </svg>
-                            <span class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-slate-900">
-                                {{ number_format($row['score'], 1) }}
-                            </span>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center leading-none">
+                                <span class="text-xs sm:text-[13px] font-black text-slate-900">
+                                    {{ number_format($row['score'], 1) }}
+                                </span>
+                                <span class="text-[8px] font-extrabold text-slate-400 mt-0.5">از ۱۰۰</span>
+                            </div>
                         </div>
                     </div>
 
-                    {{-- ستاره‌ها و برچسب وضعیت کیفی --}}
-                    <div class="mt-2.5 flex items-center justify-between border-t border-slate-100/80 pt-2 text-[10px]">
-                        <div class="flex items-center gap-0.5" role="img" aria-label="{{ number_format($row['stars'], 1) }} از ۵ ستاره">
+                    {{-- ستاره‌ها با اندازه بزرگ‌تر، جلوه بصری عالی و برچسب سطح کیفی --}}
+                    <div class="mt-3 flex items-center justify-between border-t border-slate-100/90 pt-2.5">
+                        <div class="flex items-center gap-1" role="img" aria-label="{{ number_format($row['stars'], 1) }} از ۵ ستاره">
                             @for($starIndex = 1; $starIndex <= 5; $starIndex++)
                                 @php
                                     $starIcon = $row['stars'] >= $starIndex
                                         ? 'bi-star-fill'
                                         : ($row['stars'] >= $starIndex - 0.5 ? 'bi-star-half' : 'bi-star');
                                 @endphp
-                                <i class="bi {{ $starIcon }} text-[11px] {{ $row['stars'] >= $starIndex - 0.5 ? 'text-amber-500' : 'text-slate-200' }}"></i>
+                                <i class="bi {{ $starIcon }} text-sm sm:text-base {{ $row['stars'] >= $starIndex - 0.5 ? 'text-amber-400 drop-shadow-sm' : 'text-slate-200' }}"></i>
                             @endfor
-                            <span class="mr-1 font-bold text-slate-600">{{ number_format($row['stars'], 1) }}</span>
+                            <span class="mr-1 text-xs font-black text-slate-700">{{ number_format($row['stars'], 1) }}</span>
                         </div>
 
-                        <span class="rounded-full px-2 py-0.5 text-[9px] font-extrabold ring-1 {{ $palette['bg'] }} {{ $palette['text'] }} {{ $palette['ring'] }}">
+                        <span class="rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ring-1 {{ $palette['bg'] }} {{ $palette['text'] }} {{ $palette['ring'] }}">
                             {{ $row['grade']['label'] }}
                         </span>
                     </div>
-
-                    {{-- سنجه‌های عملکردی (تحویل، تخصیص، سرعت واکنش) --}}
-                    <div class="mt-2 grid grid-cols-3 gap-1.5 rounded-xl bg-slate-50 p-2 text-center text-[10px]">
-                        <div>
-                            <span class="block font-semibold text-slate-400 text-[9px]">تحویل‌ها</span>
-                            <span class="font-extrabold text-slate-800">{{ number_format($row['deliveries']) }}</span>
-                        </div>
-                        <div>
-                            <span class="block font-semibold text-slate-400 text-[9px]">تخصیص‌ها</span>
-                            <span class="font-extrabold text-slate-800">{{ number_format($row['allocations']) }}</span>
-                        </div>
-                        <div>
-                            <span class="block font-semibold text-slate-400 text-[9px]">میانه واکنش</span>
-                            <span class="font-extrabold text-slate-800">
-                                {{ $row['median_hours'] !== null ? number_format($row['median_hours'], 1) . ' س' : '-' }}
-                            </span>
-                        </div>
-                    </div>
-
-                    @if($row['pending_overdue'] > 0)
-                        <div class="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-rose-600">
-                            <i class="bi bi-exclamation-circle text-xs"></i>
-                            <span>{{ number_format($row['pending_overdue']) }} تخصیص بی‌پاسخ (تأخیری)</span>
-                        </div>
-                    @endif
                 </div>
 
-                {{-- بخش اختصاصی ضریب ارزیابی مدیریت --}}
-                <div class="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
+                {{-- بخش اختصاصی ضریب ارزیابی مدیریت:
+                     ۱. جلوگیری از باز شدن ناخواسته مودال با event.stopPropagation()
+                     ۲. مخفی‌سازی کامل در خروجی PDF و چاپ با print:hidden و no-print --}}
+                <div
+                    @click.stop
+                    class="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2 print:hidden no-print"
+                    data-no-print
+                >
                     <div class="flex items-center gap-1.5">
                         <span class="text-[10px] font-black text-slate-600">ضریب مدیریت:</span>
 
                         @if($isManager)
-                            <div class="relative flex items-center">
+                            <div class="relative flex items-center" @click.stop>
                                 <select
+                                    @click.stop
                                     wire:change="updateManagementScore({{ $row['id'] }}, $event.target.value)"
                                     wire:loading.attr="disabled"
                                     wire:target="updateManagementScore({{ $row['id'] }}, $event.target.value)"
@@ -371,11 +381,11 @@
                         @endif
                     </div>
 
-                    {{-- فرمول و تفکیک امتیاز در صورت کاهش ضریب --}}
+                    {{-- فرمول کسر امتیاز در صورت ضریب کمتر از ۱۰ --}}
                     <div>
                         @if($row['management_score'] < 10)
                             <span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md ring-1 ring-rose-200/60" title="امتیاز عملکرد × (ضریب مدیریت ÷ ۱۰)">
-                                {{ number_format($row['base_score'], 1) }} × {{ $row['management_score'] / 10 }}
+                                پایه: {{ number_format($row['base_score'], 1) }} × {{ $row['management_score'] / 10 }}
                             </span>
                         @else
                             <span class="text-[9px] font-semibold text-slate-400">
