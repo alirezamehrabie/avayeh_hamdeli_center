@@ -46,7 +46,7 @@ class SocialWorkerPerformanceEvaluator
 
     public const CHART_MONTHS = 6;
 
-    public function evaluate(SocialWorker $worker, ?array $range = null): array
+    public function evaluate(SocialWorker $worker, ?array $range = null, ?int $managementScore = null): array
     {
         $range = $this->normalizeRange($range);
         $workerId = (int) $worker->getKey();
@@ -54,8 +54,14 @@ class SocialWorkerPerformanceEvaluator
         $allocations = $this->allocationRows($workerId, $range);
         $deliverySummary = $this->deliverySummary($workerId, $range);
 
+        $mScore = $managementScore !== null ? max(1, min(10, (int) $managementScore)) : 10;
+
         if ($allocations->isEmpty() && (int) $deliverySummary['count'] === 0) {
-            return $this->emptyResult($range);
+            $empty = $this->emptyResult($range);
+            $empty['management_score'] = $mScore;
+            $empty['base_score'] = 0.0;
+
+            return $empty;
         }
 
         $response = $this->responseMetric($allocations);
@@ -73,10 +79,13 @@ class SocialWorkerPerformanceEvaluator
             'consistency' => $consistency,
         ];
 
-        $totalScore = $this->weightedScore($metrics);
+        $baseScore = $this->weightedScore($metrics);
+        $totalScore = round($baseScore * ($mScore / 10.0), 1);
 
         return [
             'has_data' => true,
+            'base_score' => $baseScore,
+            'management_score' => $mScore,
             'score' => $totalScore,
             'stars' => $this->stars($totalScore),
             'grade' => $this->grade($totalScore),
@@ -100,9 +109,10 @@ class SocialWorkerPerformanceEvaluator
      *
      * @param  array<int, int>  $workerIds
      * @param  array{from?: mixed, to?: mixed}|null  $range  بازهٔ ارزیابی؛ خالی یعنی همهٔ زمان‌ها.
+     * @param  array<int, int>  $managementScores  ضرایب مدیریت به‌صورت [workerId => score] (۱ تا ۱۰)
      * @return array<int, array<string, mixed>> کلید هر ردیف، شناسهٔ مددکار است.
      */
-    public function rankMany(array $workerIds, ?array $range = null): array
+    public function rankMany(array $workerIds, ?array $range = null, array $managementScores = []): array
     {
         $range = $this->normalizeRange($range);
         $workerIds = array_values(array_unique(array_map('intval', $workerIds)));
@@ -121,10 +131,14 @@ class SocialWorkerPerformanceEvaluator
         foreach ($workerIds as $workerId) {
             $allocations = $allocationsByWorker[$workerId] ?? collect();
             $deliverySummary = $deliverySummaries[$workerId] ?? $this->emptyDeliverySummary();
+            $mScore = isset($managementScores[$workerId]) ? (int) $managementScores[$workerId] : 10;
+            $mScore = max(1, min(10, $mScore));
 
             if ($allocations->isEmpty() && (int) $deliverySummary['count'] === 0) {
                 $result[$workerId] = [
                     'has_data' => false,
+                    'base_score' => 0.0,
+                    'management_score' => $mScore,
                     'score' => 0.0,
                     'stars' => 0.0,
                     'grade' => ['label' => 'بدون داده', 'accent' => 'slate'],
@@ -150,10 +164,13 @@ class SocialWorkerPerformanceEvaluator
                 'consistency' => $this->consistencyMetric($monthly, $range !== null),
             ];
 
-            $score = $this->weightedScore($metrics);
+            $baseScore = $this->weightedScore($metrics);
+            $score = round($baseScore * ($mScore / 10.0), 1);
 
             $result[$workerId] = [
                 'has_data' => true,
+                'base_score' => $baseScore,
+                'management_score' => $mScore,
                 'score' => $score,
                 'stars' => $this->stars($score),
                 'grade' => $this->grade($score),
@@ -267,6 +284,8 @@ class SocialWorkerPerformanceEvaluator
     {
         return [
             'has_data' => false,
+            'base_score' => 0.0,
+            'management_score' => 10,
             'score' => 0.0,
             'stars' => 0.0,
             'grade' => ['label' => 'بدون داده', 'accent' => 'slate'],

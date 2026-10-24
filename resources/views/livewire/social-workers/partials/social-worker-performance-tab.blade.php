@@ -79,6 +79,18 @@
                         </p>
                     @endif
 
+                    @if(isset($performance['management_score']))
+                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span class="inline-flex items-center gap-1.5 rounded-full {{ $performance['management_score'] < 10 ? 'bg-amber-50 text-amber-800 ring-1 ring-amber-200' : 'bg-slate-100 text-slate-700' }} px-2.5 py-1 text-[10px] font-extrabold">
+                                <i class="bi bi-shield-check"></i>
+                                ضریب ارزیابی مدیریت: {{ $performance['management_score'] }} از ۱۰
+                                @if($performance['management_score'] < 10)
+                                    (امتیاز پایه: {{ number_format($performance['base_score'], 1) }})
+                                @endif
+                            </span>
+                        </div>
+                    @endif
+
                     <div class="mt-3 flex items-center gap-1.5" role="img" aria-label="امتیاز {{ number_format($stars, 1) }} از ۵ ستاره">
                         @for($starIndex = 1; $starIndex <= 5; $starIndex++)
                             @php

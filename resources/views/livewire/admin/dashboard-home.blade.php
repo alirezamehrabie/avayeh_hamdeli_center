@@ -472,7 +472,7 @@
                                     </div>
                                 </button>
 
-                                <button type="button" class="group relative text-right overflow-hidden rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-violet-100">
+                                <button type="button" wire:click="selectSection('advanced-social-worker-report')" class="group relative text-right overflow-hidden rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-violet-100">
                                     <span class="absolute inset-y-0 right-0 w-1 bg-violet-500"></span>
                                     <div class="flex items-start justify-between">
                                         <div>
@@ -741,6 +741,37 @@
 
                     @default
                         <div>
+                            @php
+                                $jalaliNow = \App\Helpers\Morilog\Jalalian::now();
+                                $daysRemainingInJalaliMonth = $jalaliNow->getMonthDays() - $jalaliNow->getDay();
+                                $isEndOfJalaliMonth = $daysRemainingInJalaliMonth <= 6;
+                            @endphp
+                            @if(auth()->user()?->isManager() && $isEndOfJalaliMonth)
+                                <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-gradient-to-l from-amber-50 to-orange-50 p-4 text-amber-950 shadow-sm">
+                                    <div class="flex items-center gap-3">
+                                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+                                            <i class="bi bi-bell-fill text-lg animate-bounce"></i>
+                                        </span>
+                                        <div>
+                                            <h2 class="text-sm font-extrabold text-amber-950">
+                                                یادآوری ارزیابی پایان ماه ({{ $jalaliNow->format('%B') }})
+                                            </h2>
+                                            <p class="mt-0.5 text-xs font-semibold text-amber-800">
+                                                در روزهای پایانی ماه شمسی قرار دارید. لطفاً عملکرد و «ضریب ارزیابی مدیریت» مددکاران اجتماعی را بررسی و نهایی نمایید.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <a
+                                        href="{{ route('admin.social-workers.ranking') }}"
+                                        class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-200"
+                                    >
+                                        <i class="bi bi-trophy-fill text-xs"></i>
+                                        <span>بررسی و ثبت ضریب مددکاران</span>
+                                    </a>
+                                </div>
+                            @endif
+
                             {{-- سربرگ بخش نمای کلی: هماهنگ با نوار رنگی کارت‌های آمار و میان‌برها --}}
                             <div class="mb-3 flex items-center gap-2.5 sm:mb-4">
                                 <span class="h-7 w-1 shrink-0 rounded-full bg-gradient-to-b from-indigo-500 via-indigo-400 to-indigo-200 sm:h-8" aria-hidden="true"></span>

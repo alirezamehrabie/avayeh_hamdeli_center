@@ -41,6 +41,7 @@ use App\Livewire\SocialWorkers\DeletedSocialWorkers;
 use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
 use App\Livewire\SocialWorkers\EditSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
+use App\Livewire\SocialWorkers\SocialWorkerRanking;
 use App\Livewire\SocialWorkers\UserAccount as SocialWorkerUserAccount;
 use App\Services\LoginRedirector;
 use Illuminate\Support\Facades\Route;
@@ -152,6 +153,9 @@ Route::get('/social-workers/create', CreateSocialWorker::class)->middleware(['au
 Route::get('/social-workers', IndexSocialWorkers::class)->middleware(['auth', 'can:manage-social-workers'])->name('social-workers.index');
 Route::get('/social-workers/block-list', DeletedSocialWorkers::class)->middleware(['auth', 'can:manage-social-workers'])->name('social-workers.block-list');
 Route::get('/social-workers/{socialWorker}/edit', EditSocialWorker::class)->middleware(['auth', 'can:manage-social-workers'])->name('social-workers.edit');
+Route::get('/admin/social-workers/ranking', SocialWorkerRanking::class)
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('admin.social-workers.ranking');
 Route::get('/admin/social-workers/announcements', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.social-workers.announcements');

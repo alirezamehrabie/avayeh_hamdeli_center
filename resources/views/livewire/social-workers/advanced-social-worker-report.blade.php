@@ -1,5 +1,33 @@
 <div class="container mx-auto max-w-7xl p-0" dir="rtl">
     <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 xl:p-7">
+        {{-- هشدار پایان ماه شمسی برای مدیریت --}}
+        @if(auth()->user()?->isManager() && $this->isEndOfJalaliMonth)
+            <div class="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-gradient-to-l from-amber-50 to-orange-50 p-4 text-amber-950 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+                        <i class="bi bi-bell-fill text-lg animate-bounce"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-sm font-extrabold text-amber-950">
+                            یادآوری ارزیابی پایان ماه ({{ $this->currentJalaliMonthName }})
+                        </h2>
+                        <p class="mt-0.5 text-xs font-semibold text-amber-800">
+                            در روزهای پایانی ماه جاری قرار دارید. لطفاً وضعیت عملکرد و «ضریب ارزیابی مدیریت» مددکاران اجتماعی را بررسی و نهایی فرمایید.
+                        </p>
+                    </div>
+                </div>
+
+                <a
+                    href="{{ route('admin.social-workers.ranking') }}"
+                    target="_blank"
+                    class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-200"
+                >
+                    <i class="bi bi-trophy-fill text-xs"></i>
+                    <span>بررسی و رتبه‌بندی مددکاران</span>
+                </a>
+            </div>
+        @endif
+
         <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 
             <div class="min-w-0 flex-1">
@@ -8,18 +36,12 @@
             </div>
 
             <div class="flex items-center gap-2 lg:flex-shrink-0">
-                <button wire:click="openRankingModal"
-                        wire:loading.attr="disabled"
-                        wire:target="openRankingModal"
-                        type="button"
-                        title="رتبه‌بندی عملکرد مددکاران"
-                        class="group flex h-11 w-11 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600 transition hover:bg-amber-100 hover:text-amber-700 disabled:cursor-wait disabled:opacity-80">
-                    <i class="bi bi-trophy-fill text-xl" wire:loading.remove wire:target="openRankingModal"></i>
-                    <svg wire:loading wire:target="openRankingModal" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
-                        <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
-                    </svg>
-                </button>
+                <a href="{{ route('admin.social-workers.ranking') }}"
+                   target="_blank"
+                   title="مشاهده صفحه رتبه‌بندی عملکرد مددکاران"
+                   class="group flex h-11 w-11 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600 transition hover:bg-amber-100 hover:text-amber-700">
+                    <i class="bi bi-trophy-fill text-xl"></i>
+                </a>
 
                 <button wire:click="exportToExcel"
                         title="خروجی اکسل"

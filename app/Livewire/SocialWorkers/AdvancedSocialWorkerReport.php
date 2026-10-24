@@ -13,6 +13,7 @@ use App\Models\Person;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
+use App\Models\SocialWorkerManagementScore;
 use App\Models\SocialWorkerSavedFilter;
 use App\Services\SocialWorkers\SocialWorkerPerformanceEvaluator;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,24 +34,46 @@ class AdvancedSocialWorkerReport extends Component
     public const RANKING_LIMIT = 50;
 
     public string $globalSearch = '';
+
     public array $filters = [];
+
     public string $saveFilterName = '';
+
     public ?int $selectedWorkerId = null;
+
     public bool $showWorkerModal = false;
+
     public string $workerModalTab = 'profile';
+
     public bool $showRankingModal = false;
+
+    public ?string $rankingSuccessMessage = null;
+
+    public ?string $rankingErrorMessage = null;
+
+    /** سال و ماه شمسی ارزیابی رتبه‌بندی */
+    public int $rankingYear;
+
+    public int $rankingMonth;
+
     /** بازهٔ ارزیابی رتبه‌بندی (رشتهٔ تاریخ جلالی Y/m/d)؛ خالی یعنی همهٔ زمان‌ها. */
     public string $rankingDateFrom = '';
+
     public string $rankingDateTo = '';
+
     /** تب عملکرد فقط وقتی بازهٔ رتبه‌بندی را اعمال می‌کند که از خودِ فهرست رتبه‌بندی باز شده باشد. */
     public bool $workerModalFromRanking = false;
+
     public array $columnFilters = [];
+
     public ?string $sortColumn = null;
+
     public string $sortDirection = 'desc';
+
     public array $columnFilterDefinitions = [];
 
     public array $workerModalTabs = [
-        'profile'     => ['label' => 'اطلاعات پرونده', 'icon' => 'bi-person-vcard'],
+        'profile' => ['label' => 'اطلاعات پرونده', 'icon' => 'bi-person-vcard'],
         'performance' => ['label' => 'ارزیابی عملکرد', 'icon' => 'bi-speedometer2'],
     ];
 
@@ -64,50 +87,59 @@ class AdvancedSocialWorkerReport extends Component
     ];
 
     public array $availableColumns = [
-        'worker_code'         => 'کد مددکار',
-        'full_name'           => 'نام و نام خانوادگی',
-        'national_id'         => 'کد ملی',
-        'mobile'              => 'موبایل',
-        'district'            => 'منطقه / ناحیه',
-        'occupation'          => 'شغل',
-        'academic_level'      => 'مقطع تحصیلی',
-        'birth_date'          => 'تاریخ تولد',
-        'age'                 => 'سن',
-        'start_date'          => 'تاریخ شروع همکاری',
-        'households_count'    => 'تعداد خانوارها',
+        'worker_code' => 'کد مددکار',
+        'full_name' => 'نام و نام خانوادگی',
+        'national_id' => 'کد ملی',
+        'mobile' => 'موبایل',
+        'district' => 'منطقه / ناحیه',
+        'occupation' => 'شغل',
+        'academic_level' => 'مقطع تحصیلی',
+        'birth_date' => 'تاریخ تولد',
+        'age' => 'سن',
+        'start_date' => 'تاریخ شروع همکاری',
+        'households_count' => 'تعداد خانوارها',
         'beneficiaries_count' => 'تعداد مددجویان',
-        'services_count'      => 'خدمات تخصیص‌یافته',
-        'deliveries_count'    => 'تحویل‌های انجام‌شده',
-        'delivered_value'     => 'ارزش تحویل‌ها (ریال)',
-        'is_active'           => 'وضعیت',
-        'created_at'          => 'تاریخ ثبت',
+        'services_count' => 'خدمات تخصیص‌یافته',
+        'deliveries_count' => 'تحویل‌های انجام‌شده',
+        'delivered_value' => 'ارزش تحویل‌ها (ریال)',
+        'is_active' => 'وضعیت',
+        'created_at' => 'تاریخ ثبت',
     ];
 
     public array $filterableFields = [
-        'first_name'          => ['label' => 'نام', 'type' => 'text'],
-        'last_name'           => ['label' => 'نام خانوادگی', 'type' => 'text'],
-        'national_id'         => ['label' => 'کد ملی', 'type' => 'text'],
-        'mobile'              => ['label' => 'موبایل', 'type' => 'text'],
-        'worker_code'         => ['label' => 'کد مددکار', 'type' => 'text'],
-        'status'              => ['label' => 'وضعیت فعالیت', 'type' => 'select', 'options' => [
-            'active'   => 'فعال',
+        'first_name' => ['label' => 'نام', 'type' => 'text'],
+        'last_name' => ['label' => 'نام خانوادگی', 'type' => 'text'],
+        'national_id' => ['label' => 'کد ملی', 'type' => 'text'],
+        'mobile' => ['label' => 'موبایل', 'type' => 'text'],
+        'worker_code' => ['label' => 'کد مددکار', 'type' => 'text'],
+        'status' => ['label' => 'وضعیت فعالیت', 'type' => 'select', 'options' => [
+            'active' => 'فعال',
             'inactive' => 'غیرفعال',
-            'all'      => 'همه (فعال و غیرفعال)',
+            'all' => 'همه (فعال و غیرفعال)',
         ]],
-        'district'            => ['label' => 'منطقه / ناحیه', 'type' => 'select', 'options' => []],
-        'occupation'          => ['label' => 'شغل', 'type' => 'select', 'options' => []],
-        'academic_level'      => ['label' => 'مقطع تحصیلی', 'type' => 'select', 'options' => []],
-        'birth_date'          => ['label' => 'تاریخ تولد', 'type' => 'date'],
-        'start_date'          => ['label' => 'تاریخ شروع همکاری', 'type' => 'date'],
-        'households_count'    => ['label' => 'تعداد خانوارهای تحت پوشش', 'type' => 'number'],
+        'district' => ['label' => 'منطقه / ناحیه', 'type' => 'select', 'options' => []],
+        'occupation' => ['label' => 'شغل', 'type' => 'select', 'options' => []],
+        'academic_level' => ['label' => 'مقطع تحصیلی', 'type' => 'select', 'options' => []],
+        'birth_date' => ['label' => 'تاریخ تولد', 'type' => 'date'],
+        'start_date' => ['label' => 'تاریخ شروع همکاری', 'type' => 'date'],
+        'households_count' => ['label' => 'تعداد خانوارهای تحت پوشش', 'type' => 'number'],
         'beneficiaries_count' => ['label' => 'تعداد مددجویان تحت پوشش', 'type' => 'number'],
-        'services_count'      => ['label' => 'تعداد خدمات تخصیص‌یافته', 'type' => 'number'],
-        'deliveries_count'    => ['label' => 'تعداد تحویل‌های انجام‌شده', 'type' => 'number'],
+        'services_count' => ['label' => 'تعداد خدمات تخصیص‌یافته', 'type' => 'number'],
+        'deliveries_count' => ['label' => 'تعداد تحویل‌های انجام‌شده', 'type' => 'number'],
         'family_members_count' => ['label' => 'تعداد اعضای خانواده مددکار', 'type' => 'number'],
     ];
 
     public function mount(): void
     {
+        $now = Jalalian::now();
+        $this->rankingYear = (int) $now->getYear();
+        $this->rankingMonth = (int) $now->getMonth();
+
+        if (request()->boolean('ranking') || request()->boolean('openRanking')) {
+            $this->showRankingModal = true;
+            $this->applyMonthToDateRange();
+        }
+
         $this->filterableFields['district']['options'] = District::query()
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -127,17 +159,17 @@ class AdvancedSocialWorkerReport extends Component
             ->toArray();
 
         $this->columnFilterDefinitions = [
-            'worker_code'         => ['type' => 'text', 'placeholder' => 'کد مددکار'],
-            'full_name'           => ['type' => 'text', 'placeholder' => 'نام و نام خانوادگی'],
-            'national_id'         => ['type' => 'text', 'placeholder' => 'کد ملی'],
-            'mobile'              => ['type' => 'text', 'placeholder' => 'موبایل'],
-            'district'            => ['type' => 'select', 'options' => $this->filterableFields['district']['options']],
-            'occupation'          => ['type' => 'select', 'options' => $this->filterableFields['occupation']['options']],
-            'academic_level'      => ['type' => 'select', 'options' => $this->filterableFields['academic_level']['options']],
-            'households_count'    => ['type' => 'number', 'placeholder' => 'تعداد خانوارها'],
+            'worker_code' => ['type' => 'text', 'placeholder' => 'کد مددکار'],
+            'full_name' => ['type' => 'text', 'placeholder' => 'نام و نام خانوادگی'],
+            'national_id' => ['type' => 'text', 'placeholder' => 'کد ملی'],
+            'mobile' => ['type' => 'text', 'placeholder' => 'موبایل'],
+            'district' => ['type' => 'select', 'options' => $this->filterableFields['district']['options']],
+            'occupation' => ['type' => 'select', 'options' => $this->filterableFields['occupation']['options']],
+            'academic_level' => ['type' => 'select', 'options' => $this->filterableFields['academic_level']['options']],
+            'households_count' => ['type' => 'number', 'placeholder' => 'تعداد خانوارها'],
             'beneficiaries_count' => ['type' => 'number', 'placeholder' => 'تعداد مددجویان'],
-            'services_count'      => ['type' => 'number', 'placeholder' => 'تعداد خدمات'],
-            'deliveries_count'    => ['type' => 'number', 'placeholder' => 'تعداد تحویل‌ها'],
+            'services_count' => ['type' => 'number', 'placeholder' => 'تعداد خدمات'],
+            'deliveries_count' => ['type' => 'number', 'placeholder' => 'تعداد تحویل‌ها'],
         ];
     }
 
@@ -148,7 +180,7 @@ class AdvancedSocialWorkerReport extends Component
 
     public function addFilter(string $field): void
     {
-        if (!isset($this->filterableFields[$field])) {
+        if (! isset($this->filterableFields[$field])) {
             return;
         }
 
@@ -194,12 +226,13 @@ class AdvancedSocialWorkerReport extends Component
 
     public function toggleColumn(string $column): void
     {
-        if (!isset($this->availableColumns[$column])) {
+        if (! isset($this->availableColumns[$column])) {
             return;
         }
 
         if (in_array($column, $this->visibleColumns, true)) {
             $this->visibleColumns = array_values(array_filter($this->visibleColumns, fn ($col) => $col !== $column));
+
             return;
         }
 
@@ -208,7 +241,7 @@ class AdvancedSocialWorkerReport extends Component
 
     public function toggleSort(string $column): void
     {
-        if (!$this->isSortableColumn($column)) {
+        if (! $this->isSortableColumn($column)) {
             return;
         }
 
@@ -273,17 +306,19 @@ class AdvancedSocialWorkerReport extends Component
 
         if ($count === 0) {
             session()->flash('error', 'هیچ رکوردی برای خروجی وجود ندارد.');
+
             return null;
         }
 
         if ($count > $maxRows) {
             session()->flash('error', "تعداد نتایج ({$count}) بیش از حد مجاز ({$maxRows}) است. لطفاً فیلترها را محدودتر کنید.");
+
             return null;
         }
 
         $query = $this->buildQuery()->limit($maxRows);
 
-        $filename = 'Export-(مددکاران)-' . Jalalian::now()->format('Y-m-d') . '.xlsx';
+        $filename = 'Export-(مددکاران)-'.Jalalian::now()->format('Y-m-d').'.xlsx';
 
         return Excel::download(
             new SocialWorkersExport(
@@ -305,7 +340,7 @@ class AdvancedSocialWorkerReport extends Component
 
     public function setWorkerModalTab(string $tab): void
     {
-        if (!isset($this->workerModalTabs[$tab])) {
+        if (! isset($this->workerModalTabs[$tab])) {
             return;
         }
 
@@ -334,6 +369,81 @@ class AdvancedSocialWorkerReport extends Component
     {
         $this->rankingDateFrom = '';
         $this->rankingDateTo = '';
+        unset($this->ranking);
+    }
+
+    public function applyMonthToDateRange(): void
+    {
+        $monthDays = (new Jalalian($this->rankingYear, $this->rankingMonth, 1))->getMonthDays();
+        $this->rankingDateFrom = sprintf('%04d/%02d/01', $this->rankingYear, $this->rankingMonth);
+        $this->rankingDateTo = sprintf('%04d/%02d/%02d', $this->rankingYear, $this->rankingMonth, $monthDays);
+    }
+
+    public function selectRankingMonth(int $year, int $month): void
+    {
+        $this->rankingYear = $year;
+        $this->rankingMonth = max(1, min(12, $month));
+        $this->applyMonthToDateRange();
+        unset($this->ranking);
+    }
+
+    public function updatedRankingYear(): void
+    {
+        $this->applyMonthToDateRange();
+        unset($this->ranking);
+    }
+
+    public function updatedRankingMonth(): void
+    {
+        $this->applyMonthToDateRange();
+        unset($this->ranking);
+    }
+
+    public function setRankingToCurrentMonth(): void
+    {
+        $now = Jalalian::now();
+        $this->selectRankingMonth($now->getYear(), $now->getMonth());
+    }
+
+    public function setRankingToPreviousMonth(): void
+    {
+        $prev = Jalalian::now()->subMonths(1);
+        $this->selectRankingMonth($prev->getYear(), $prev->getMonth());
+    }
+
+    public function updateManagementScore(int $workerId, int|string $score): void
+    {
+        if (! auth()->user()?->isManager()) {
+            abort(403, 'تنها نقش مدیریت مجاز به تغییر ضریب ارزیابی است.');
+        }
+
+        $score = (int) $score;
+        if ($score < 1 || $score > 10) {
+            $this->rankingErrorMessage = 'ضریب مدیریت باید عددی صحیح بین ۱ تا ۱۰ باشد.';
+            $this->rankingSuccessMessage = null;
+
+            return;
+        }
+
+        SocialWorker::query()->findOrFail($workerId);
+
+        $record = SocialWorkerManagementScore::firstOrNew([
+            'social_worker_id' => $workerId,
+            'year' => $this->rankingYear,
+            'month' => $this->rankingMonth,
+        ]);
+
+        if (! $record->exists) {
+            $record->created_by = auth()->id();
+        }
+
+        $record->score = $score;
+        $record->updated_by = auth()->id();
+        $record->save();
+
+        unset($this->ranking);
+        $this->rankingErrorMessage = null;
+        $this->rankingSuccessMessage = 'ضریب ارزیابی مدیریت با موفقیت بروزرسانی شد.';
     }
 
     /**
@@ -388,7 +498,7 @@ class AdvancedSocialWorkerReport extends Component
         if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $date) === 1) {
             [$year, $month, $day] = array_map('intval', explode('/', $date));
 
-            if (!CalendarUtils::isValidateJalaliDate($year, $month, $day)) {
+            if (! CalendarUtils::isValidateJalaliDate($year, $month, $day)) {
                 return null;
             }
 
@@ -427,7 +537,7 @@ class AdvancedSocialWorkerReport extends Component
     #[Computed]
     public function ranking(): array
     {
-        if (!$this->showRankingModal) {
+        if (! $this->showRankingModal) {
             return ['rows' => [], 'evaluated' => 0, 'total' => 0, 'truncated' => false];
         }
 
@@ -438,7 +548,17 @@ class AdvancedSocialWorkerReport extends Component
             return ['rows' => [], 'evaluated' => 0, 'total' => 0, 'truncated' => false];
         }
 
-        $evaluations = app(SocialWorkerPerformanceEvaluator::class)->rankMany($workerIds, $this->rankingRange);
+        $managementScores = SocialWorkerManagementScore::getScoresForMany(
+            $workerIds,
+            $this->rankingYear,
+            $this->rankingMonth
+        );
+
+        $evaluations = app(SocialWorkerPerformanceEvaluator::class)->rankMany(
+            $workerIds,
+            $this->rankingRange,
+            $managementScores
+        );
 
         $workers = SocialWorker::query()
             ->withoutGlobalScope('active')
@@ -449,10 +569,10 @@ class AdvancedSocialWorkerReport extends Component
             ->keyBy('id');
 
         $rows = collect($workerIds)
-            ->map(function (int $workerId) use ($evaluations, $workers): ?array {
+            ->map(function (int $workerId) use ($evaluations, $workers, $managementScores): ?array {
                 $worker = $workers->get($workerId);
 
-                if (!$worker) {
+                if (! $worker) {
                     return null;
                 }
 
@@ -464,6 +584,8 @@ class AdvancedSocialWorkerReport extends Component
                     'worker_code' => $worker->worker_code ?: '-',
                     'is_active' => (bool) $worker->is_active,
                     'has_data' => (bool) ($evaluation['has_data'] ?? false),
+                    'base_score' => (float) ($evaluation['base_score'] ?? $evaluation['score'] ?? 0.0),
+                    'management_score' => (int) ($evaluation['management_score'] ?? $managementScores[$workerId] ?? 10),
                     'score' => (float) ($evaluation['score'] ?? 0.0),
                     'stars' => (float) ($evaluation['stars'] ?? 0.0),
                     'grade' => $evaluation['grade'] ?? ['label' => 'بدون داده', 'accent' => 'slate'],
@@ -487,7 +609,7 @@ class AdvancedSocialWorkerReport extends Component
 
     public function getSelectedWorkerProperty(): ?SocialWorker
     {
-        if (!$this->selectedWorkerId) {
+        if (! $this->selectedWorkerId) {
             return null;
         }
 
@@ -518,13 +640,67 @@ class AdvancedSocialWorkerReport extends Component
     {
         $worker = $this->selectedWorker;
 
-        if (!$worker) {
+        if (! $worker) {
             return null;
         }
 
         $range = $this->workerModalFromRanking ? $this->rankingRange : null;
+        $managementScore = $this->workerModalFromRanking
+            ? SocialWorkerManagementScore::getScoreFor($worker->id, $this->rankingYear, $this->rankingMonth)
+            : 10;
 
-        return app(SocialWorkerPerformanceEvaluator::class)->evaluate($worker, $range);
+        return app(SocialWorkerPerformanceEvaluator::class)->evaluate($worker, $range, $managementScore);
+    }
+
+    #[Computed]
+    public function isEndOfJalaliMonth(): bool
+    {
+        $now = Jalalian::now();
+        $totalDays = $now->getMonthDays();
+        $day = $now->getDay();
+
+        return ($totalDays - $day) <= 6;
+    }
+
+    #[Computed]
+    public function currentJalaliMonthName(): string
+    {
+        return Jalalian::now()->format('%B');
+    }
+
+    #[Computed]
+    public function rankingMonthName(): string
+    {
+        $names = $this->jalaliMonths;
+
+        return $names[$this->rankingMonth] ?? (string) $this->rankingMonth;
+    }
+
+    #[Computed]
+    public function jalaliMonths(): array
+    {
+        return [
+            1 => 'فروردین',
+            2 => 'اردیبهشت',
+            3 => 'خرداد',
+            4 => 'تیر',
+            5 => 'مرداد',
+            6 => 'شهریور',
+            7 => 'مهر',
+            8 => 'آبان',
+            9 => 'آذر',
+            10 => 'دی',
+            11 => 'بهمن',
+            12 => 'اسفند',
+        ];
+    }
+
+    #[Computed]
+    public function jalaliYears(): array
+    {
+        $current = Jalalian::now()->getYear();
+
+        return range($current - 2, $current + 1);
     }
 
     /**
@@ -553,7 +729,7 @@ class AdvancedSocialWorkerReport extends Component
             $field = $filter['field'] ?? null;
             $type = $filter['type'] ?? null;
 
-            if (!$field || !isset($this->filterableFields[$field])) {
+            if (! $field || ! isset($this->filterableFields[$field])) {
                 continue;
             }
 
@@ -628,14 +804,14 @@ class AdvancedSocialWorkerReport extends Component
         $prefix = $field === 'start_date' ? 'start' : 'birth';
         $mode = $filter['mode'] ?? 'exact';
 
-        if ($mode === 'exact' && !empty($filter['exact'])) {
+        if ($mode === 'exact' && ! empty($filter['exact'])) {
             [$year, $month, $day] = array_pad(explode('/', $filter['exact']), 3, null);
             $query->where("{$prefix}_year", $year)
                 ->where("{$prefix}_month", $month)
                 ->where("{$prefix}_day", $day);
         }
 
-        if ($mode === 'range' && !empty($filter['from']) && !empty($filter['to'])) {
+        if ($mode === 'range' && ! empty($filter['from']) && ! empty($filter['to'])) {
             [$fromYear, $fromMonth, $fromDay] = array_pad(explode('/', $filter['from']), 3, null);
             [$toYear, $toMonth, $toDay] = array_pad(explode('/', $filter['to']), 3, null);
             $query->whereRaw("CONCAT({$prefix}_year, '-', LPAD({$prefix}_month,2,'0'), '-', LPAD({$prefix}_day,2,'0')) BETWEEN ? AND ?", [
@@ -644,11 +820,11 @@ class AdvancedSocialWorkerReport extends Component
             ]);
         }
 
-        if ($mode === 'month' && !empty($filter['month'])) {
+        if ($mode === 'month' && ! empty($filter['month'])) {
             $query->where("{$prefix}_month", (int) $filter['month']);
         }
 
-        if ($mode === 'year' && !empty($filter['year'])) {
+        if ($mode === 'year' && ! empty($filter['year'])) {
             $query->where("{$prefix}_year", (int) $filter['year']);
         }
     }
@@ -657,7 +833,7 @@ class AdvancedSocialWorkerReport extends Component
     {
         $operator = $filter['operator'] ?? 'eq';
         $value = $filter['value'] ?? null;
-        if ($value === '' || $value === null || !is_numeric($value)) {
+        if ($value === '' || $value === null || ! is_numeric($value)) {
             return;
         }
 
@@ -776,7 +952,7 @@ class AdvancedSocialWorkerReport extends Component
                 case 'full_name':
                 case 'national_id':
                 case 'mobile':
-                    $query->where($column, 'like', '%' . $value . '%');
+                    $query->where($column, 'like', '%'.$value.'%');
                     break;
 
                 case 'district':
@@ -889,7 +1065,7 @@ class AdvancedSocialWorkerReport extends Component
                 break;
         }
 
-        if ($this->sortColumn !== null && !in_array($this->sortColumn, ['created_at'], true)) {
+        if ($this->sortColumn !== null && ! in_array($this->sortColumn, ['created_at'], true)) {
             $query->orderBy('social_workers.id', 'desc');
         }
     }

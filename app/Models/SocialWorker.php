@@ -2,18 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations;
-use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
-use App\Models\GuardianRelationType;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SocialWorker extends Model
 {
@@ -52,7 +49,6 @@ class SocialWorker extends Model
         'full_name',
     ];
 
-
     protected $casts = [
         'worker_code' => 'integer',
         'birth_day' => 'integer',
@@ -68,11 +64,10 @@ class SocialWorker extends Model
         'is_active' => 'boolean',
     ];
 
-
     protected static function booted(): void
     {
         static::addGlobalScope('active', function (Builder $builder) {
-            $builder->where($builder->getModel()->getTable() . '.is_active', true);
+            $builder->where($builder->getModel()->getTable().'.is_active', true);
         });
     }
 
@@ -101,13 +96,12 @@ class SocialWorker extends Model
         return preg_replace('/\s+/u', ' ', trim($value)) ?? '';
     }
 
-
     public static function generateNextWorkerCode(): int
     {
         $maxCode = self::withoutGlobalScope('active')->withTrashed()->max('worker_code');
+
         return $maxCode ? ($maxCode + 1) : 10;
     }
-
 
     public function deactivate(): bool
     {
@@ -135,7 +129,7 @@ class SocialWorker extends Model
      */
     public function getFormattedBirthDateAttribute(): ?string
     {
-        if (!$this->birth_year || !$this->birth_month || !$this->birth_day) {
+        if (! $this->birth_year || ! $this->birth_month || ! $this->birth_day) {
             return null;
         }
 
@@ -147,7 +141,7 @@ class SocialWorker extends Model
      */
     public function getFormattedStartDateAttribute(): ?string
     {
-        if (!$this->start_year || !$this->start_month || !$this->start_day) {
+        if (! $this->start_year || ! $this->start_month || ! $this->start_day) {
             return null;
         }
 
@@ -159,7 +153,7 @@ class SocialWorker extends Model
      */
     public function getAgeAttribute(): ?int
     {
-        if (!$this->birth_year) {
+        if (! $this->birth_year) {
             return null;
         }
 
@@ -205,8 +199,8 @@ class SocialWorker extends Model
 
         $this->update([
             'covered_households_count' => $this->guardians()->count(),
-            'covered_children_count'   => $this->people()->count(),
-            'covered_people_count'     => $this->calculateCoveredPeopleCount(),
+            'covered_children_count' => $this->people()->count(),
+            'covered_people_count' => $this->calculateCoveredPeopleCount(),
         ]);
     }
 
@@ -214,7 +208,6 @@ class SocialWorker extends Model
     {
         return $this->hasMany(Guardian::class, 'social_worker_id');
     }
-
 
     public function district()
     {
@@ -236,10 +229,20 @@ class SocialWorker extends Model
         return $this->belongsTo(Occupation::class);
     }
 
-    public function academicLevel() {
+    public function academicLevel()
+    {
         return $this->belongsTo(AcademicLevel::class, 'academic_level_id');
     }
 
+    public function managementScores(): HasMany
+    {
+        return $this->hasMany(SocialWorkerManagementScore::class);
+    }
+
+    public function managementScoreFor(int $year, int $month): int
+    {
+        return SocialWorkerManagementScore::getScoreFor($this->getKey(), $year, $month);
+    }
 
     public function calculateCoveredPeopleCount(): int
     {
@@ -273,7 +276,7 @@ class SocialWorker extends Model
     {
         $people = $this->people()
             ->with([
-                'harmTypes' => fn($q) => $q->select('harm_types.id'),
+                'harmTypes' => fn ($q) => $q->select('harm_types.id'),
                 'guardian:id,national_code,first_name,last_name',
                 'familyStatus:person_id,guardian_relation_type_id',
             ])
@@ -299,10 +302,10 @@ class SocialWorker extends Model
             $motherNationalId = $this->normalizeNationalId($person->mother_national_id);
             $guardianNationalId = $this->normalizeNationalId($person->guardian?->national_code);
 
-            $beneficiaryFullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
-            $guardianFullName = trim(($person->guardian?->first_name ?? '') . ' ' . ($person->guardian?->last_name ?? '')) ?: '-';
-            $sourceLabel = $beneficiaryFullName . ($person->person_code ? " ({$person->person_code})" : '');
-            $guardianLabel = trim(($person->guardian?->first_name ?? '') . ' ' . ($person->guardian?->last_name ?? ''));
+            $beneficiaryFullName = trim(($person->first_name ?? '').' '.($person->last_name ?? '')) ?: '-';
+            $guardianFullName = trim(($person->guardian?->first_name ?? '').' '.($person->guardian?->last_name ?? '')) ?: '-';
+            $sourceLabel = $beneficiaryFullName.($person->person_code ? " ({$person->person_code})" : '');
+            $guardianLabel = trim(($person->guardian?->first_name ?? '').' '.($person->guardian?->last_name ?? ''));
             if ($guardianLabel === '') {
                 $guardianLabel = $guardianNationalId ? "سرپرست {$guardianNationalId}" : 'سرپرست نامشخص';
             } elseif ($guardianNationalId) {
@@ -329,12 +332,12 @@ class SocialWorker extends Model
 
             if ($fatherNationalId) {
                 $parentNationalIds->push($fatherNationalId);
-                if (!$shouldExcludeFather) {
+                if (! $shouldExcludeFather) {
                     $this->addCoveredDetail(
                         $detailsByNationalId,
                         $fatherNationalId,
                         $this->resolveParentRelationshipRole('father', $hasDivorceHarmType, $guardianRelationTypeId),
-                        trim((string)$person->father_name) ?: 'پدر خانواده',
+                        trim((string) $person->father_name) ?: 'پدر خانواده',
                         $sourceLabel,
                         $guardianLabel
                     );
@@ -345,7 +348,7 @@ class SocialWorker extends Model
 
             if ($motherNationalId) {
                 $parentNationalIds->push($motherNationalId);
-                if (!$shouldExcludeMother) {
+                if (! $shouldExcludeMother) {
                     $this->addCoveredDetail(
                         $detailsByNationalId,
                         $motherNationalId,
@@ -359,20 +362,22 @@ class SocialWorker extends Model
                 }
             }
 
-            if (!$guardianNationalId) {
+            if (! $guardianNationalId) {
                 continue;
             }
 
-            $fatherIncluded = $fatherNationalId && !$shouldExcludeFather;
-            $motherIncluded = $motherNationalId && !$shouldExcludeMother;
+            $fatherIncluded = $fatherNationalId && ! $shouldExcludeFather;
+            $motherIncluded = $motherNationalId && ! $shouldExcludeMother;
 
             if ($fatherIncluded && $guardianNationalId === $fatherNationalId) {
                 $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel, $guardianLabel);
+
                 continue;
             }
 
             if ($motherIncluded && $guardianNationalId === $motherNationalId) {
                 $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel, $guardianLabel);
+
                 continue;
             }
 
@@ -390,6 +395,7 @@ class SocialWorker extends Model
                 $detail['guardians'] = collect($detail['guardians'])->unique()->values()->all();
                 $detail['guardian_group'] = $detail['guardians'][0] ?? '-';
                 $detail['role_label'] = $this->buildRoleLabel($detail['roles']);
+
                 return $detail;
             })
             ->sortBy([
@@ -407,9 +413,8 @@ class SocialWorker extends Model
         string $name,
         string $sourceLabel,
         string $guardianLabel
-    ): void
-    {
-        if (!isset($detailsByNationalId[$nationalId])) {
+    ): void {
+        if (! isset($detailsByNationalId[$nationalId])) {
             $detailsByNationalId[$nationalId] = [
                 'national_id' => $nationalId,
                 'name' => $name ?: '-',
@@ -417,6 +422,7 @@ class SocialWorker extends Model
                 'sources' => [$sourceLabel],
                 'guardians' => [$guardianLabel],
             ];
+
             return;
         }
 
@@ -441,9 +447,9 @@ class SocialWorker extends Model
             return 'مادر/سرپرست';
         }
 
-//        if ($rolesCollection->contains('beneficiary') && $rolesCollection->contains('guardian')) {
-//            return 'مددجو/سرپرست';
-//        }
+        //        if ($rolesCollection->contains('beneficiary') && $rolesCollection->contains('guardian')) {
+        //            return 'مددجو/سرپرست';
+        //        }
 
         $labels = [
             'beneficiary' => 'مددجو',
@@ -455,7 +461,7 @@ class SocialWorker extends Model
         ];
 
         return $rolesCollection
-            ->map(fn(string $role) => $labels[$role] ?? $role)
+            ->map(fn (string $role) => $labels[$role] ?? $role)
             ->implode(' / ');
     }
 
@@ -490,7 +496,7 @@ class SocialWorker extends Model
 
         static $relationTypeTitleCache = [];
 
-        if (!array_key_exists($guardianRelationTypeId, $relationTypeTitleCache)) {
+        if (! array_key_exists($guardianRelationTypeId, $relationTypeTitleCache)) {
             $relationTypeTitleCache[$guardianRelationTypeId] = trim((string) GuardianRelationType::query()
                 ->where('id', $guardianRelationTypeId)
                 ->value('title'));
@@ -501,19 +507,18 @@ class SocialWorker extends Model
 
     private function normalizeNationalId(?string $nationalId): ?string
     {
-        if (!$nationalId) {
+        if (! $nationalId) {
             return null;
         }
 
         $normalized = preg_replace('/\D+/', '', trim($nationalId));
 
-        if (!$normalized || strlen($normalized) !== 10) {
+        if (! $normalized || strlen($normalized) !== 10) {
             return null;
         }
 
         return $normalized;
     }
-
 
     /**
      * متد اختصاصی برای بروزرسانی آمار
@@ -522,5 +527,4 @@ class SocialWorker extends Model
     {
         $this->updateStatistics();
     }
-
 }
