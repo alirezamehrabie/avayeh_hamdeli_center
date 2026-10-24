@@ -32,6 +32,9 @@ class SocialWorkerRanking extends Component
     #[Url(as: 'month')]
     public int $rankingMonth = 0;
 
+    #[Url(as: 'mode', except: 'monthly')]
+    public string $rankingMode = 'monthly'; // 'monthly' or 'custom'
+
     public string $rankingDateFrom = '';
 
     public string $rankingDateTo = '';
@@ -55,6 +58,10 @@ class SocialWorkerRanking extends Component
     {
         $now = Jalalian::now();
 
+        if (request()->has('mode') && in_array(request('mode'), ['monthly', 'custom'], true)) {
+            $this->rankingMode = request('mode');
+        }
+
         if (empty($this->rankingYear)) {
             $this->rankingYear = (int) $now->getYear();
         }
@@ -73,14 +80,35 @@ class SocialWorkerRanking extends Component
         $this->rankingMonth = max(1, min(12, $this->rankingMonth));
 
         // محدودسازی پیش‌فرض بازه ارزیابی به ماه جاری شمسی در بارگذاری اولیه
-        $this->applyMonthToDateRange();
+        if ($this->rankingMode === 'monthly') {
+            $this->applyMonthToDateRange();
+        }
     }
 
-    public function selectRankingMonth(int $year, int $month): void
+    public function setRankingMode(string $mode): void
     {
         $this->closeWorkerModal();
-        $this->rankingYear = $year;
-        $this->rankingMonth = max(1, min(12, $month));
+        if (in_array($mode, ['monthly', 'custom'], true)) {
+            $this->rankingMode = $mode;
+            if ($mode === 'monthly') {
+                $this->applyMonthToDateRange();
+            }
+            unset($this->ranking);
+        }
+    }
+
+    public function selectRankingMonth(int $yearOrMonth, ?int $month = null): void
+    {
+        $this->closeWorkerModal();
+        $this->rankingMode = 'monthly';
+
+        if ($month === null) {
+            $this->rankingMonth = max(1, min(12, $yearOrMonth));
+        } else {
+            $this->rankingYear = $yearOrMonth;
+            $this->rankingMonth = max(1, min(12, $month));
+        }
+
         $this->applyMonthToDateRange();
         unset($this->ranking);
     }
@@ -88,6 +116,7 @@ class SocialWorkerRanking extends Component
     public function updatedRankingYear(): void
     {
         $this->closeWorkerModal();
+        $this->rankingMode = 'monthly';
         $this->applyMonthToDateRange();
         unset($this->ranking);
     }
@@ -95,6 +124,7 @@ class SocialWorkerRanking extends Component
     public function updatedRankingMonth(): void
     {
         $this->closeWorkerModal();
+        $this->rankingMode = 'monthly';
         $this->applyMonthToDateRange();
         unset($this->ranking);
     }
@@ -102,12 +132,14 @@ class SocialWorkerRanking extends Component
     public function updatedRankingDateFrom(): void
     {
         $this->closeWorkerModal();
+        $this->rankingMode = 'custom';
         unset($this->ranking);
     }
 
     public function updatedRankingDateTo(): void
     {
         $this->closeWorkerModal();
+        $this->rankingMode = 'custom';
         unset($this->ranking);
     }
 
@@ -126,6 +158,7 @@ class SocialWorkerRanking extends Component
     public function setRankingToCurrentMonth(): void
     {
         $this->closeWorkerModal();
+        $this->rankingMode = 'monthly';
         $now = Jalalian::now();
         $this->selectRankingMonth($now->getYear(), $now->getMonth());
     }
@@ -133,6 +166,7 @@ class SocialWorkerRanking extends Component
     public function setRankingToPreviousMonth(): void
     {
         $this->closeWorkerModal();
+        $this->rankingMode = 'monthly';
         $prev = Jalalian::now()->subMonths(1);
         $this->selectRankingMonth($prev->getYear(), $prev->getMonth());
     }
@@ -147,6 +181,7 @@ class SocialWorkerRanking extends Component
     public function clearRankingRange(): void
     {
         $this->closeWorkerModal();
+        $this->rankingMode = 'custom';
         $this->rankingDateFrom = '';
         $this->rankingDateTo = '';
         unset($this->ranking);
@@ -156,6 +191,13 @@ class SocialWorkerRanking extends Component
     {
         if (! auth()->user()?->isManager()) {
             abort(403, 'تنها نقش مدیریت مجاز به تغییر ضریب ارزیابی است.');
+        }
+
+        if ($this->rankingMode !== 'monthly') {
+            $this->rankingErrorMessage = 'تغییر ضریب ارزیابی مدیریت فقط در حالت ارزیابی ماهانه امکان‌پذیر است.';
+            $this->rankingSuccessMessage = null;
+
+            return;
         }
 
         $score = (int) $score;
@@ -234,13 +276,66 @@ class SocialWorkerRanking extends Component
             return null;
         }
 
+        if ($from !== null && $to !== null && $from->gt($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
         return ['from' => $from, 'to' => $to];
+    }
+
+    /**
+     * استخراج لیست ماه‌های جلالی پوشش‌داده‌شده توسط بازه زمانی انتخابی.
+     *
+     * @return array<array{year: int, month: int}>
+     */
+    public function getMonthsCoveredByRange(): array
+    {
+        $range = $this->rankingRange();
+
+        if ($range === null || $range['from'] === null || $range['to'] === null) {
+            return [];
+        }
+
+        try {
+            $fromJalali = Jalalian::fromDateTime($range['from']);
+            $toJalali = Jalalian::fromDateTime($range['to']);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $startYear = (int) $fromJalali->getYear();
+        $startMonth = (int) $fromJalali->getMonth();
+        $endYear = (int) $toJalali->getYear();
+        $endMonth = (int) $toJalali->getMonth();
+
+        if ($startYear > $endYear || ($startYear === $endYear && $startMonth > $endMonth)) {
+            return [];
+        }
+
+        $months = [];
+        $currentYear = $startYear;
+        $currentMonth = $startMonth;
+
+        while ($currentYear < $endYear || ($currentYear === $endYear && $currentMonth <= $endMonth)) {
+            $months[] = [
+                'year' => $currentYear,
+                'month' => $currentMonth,
+            ];
+
+            $currentMonth++;
+            if ($currentMonth > 12) {
+                $currentMonth = 1;
+                $currentYear++;
+            }
+        }
+
+        return $months;
     }
 
     #[Computed]
     public function rankingRangeLabel(): ?string
     {
-        $range = $this->rankingRange;
+        $range = $this->rankingRange();
 
         if ($range === null) {
             return null;
@@ -322,15 +417,23 @@ class SocialWorkerRanking extends Component
             ];
         }
 
-        $managementScores = SocialWorkerManagementScore::getScoresForMany(
-            $workerIds,
-            $this->rankingYear,
-            $this->rankingMonth
-        );
+        if ($this->rankingMode === 'monthly') {
+            $managementScores = SocialWorkerManagementScore::getScoresForMany(
+                $workerIds,
+                $this->rankingYear,
+                $this->rankingMonth
+            );
+        } else {
+            $coveredMonths = $this->getMonthsCoveredByRange();
+            $managementScores = SocialWorkerManagementScore::getScoresForRange(
+                $workerIds,
+                $coveredMonths
+            );
+        }
 
         $evaluations = app(SocialWorkerPerformanceEvaluator::class)->rankMany(
             $workerIds,
-            $this->rankingRange,
+            $this->rankingRange(),
             $managementScores
         );
 
@@ -358,7 +461,7 @@ class SocialWorkerRanking extends Component
                     'is_active' => (bool) $worker->is_active,
                     'has_data' => (bool) ($evaluation['has_data'] ?? false),
                     'base_score' => (float) ($evaluation['base_score'] ?? $evaluation['score'] ?? 0.0),
-                    'management_score' => (int) ($evaluation['management_score'] ?? $managementScores[$workerId] ?? 10),
+                    'management_score' => (float) ($evaluation['management_score'] ?? $managementScores[$workerId] ?? 10.0),
                     'score' => (float) ($evaluation['score'] ?? 0.0),
                     'stars' => (float) ($evaluation['stars'] ?? 0.0),
                     'grade' => $evaluation['grade'] ?? ['label' => 'بدون داده', 'accent' => 'slate'],
@@ -424,9 +527,14 @@ class SocialWorkerRanking extends Component
             return null;
         }
 
-        $managementScore = SocialWorkerManagementScore::getScoreFor($worker->id, $this->rankingYear, $this->rankingMonth);
+        if ($this->rankingMode === 'monthly') {
+            $managementScore = SocialWorkerManagementScore::getScoreFor($worker->id, $this->rankingYear, $this->rankingMonth);
+        } else {
+            $coveredMonths = $this->getMonthsCoveredByRange();
+            $managementScore = SocialWorkerManagementScore::getScoreForRange($worker->id, $coveredMonths);
+        }
 
-        return app(SocialWorkerPerformanceEvaluator::class)->evaluate($worker, $this->rankingRange, $managementScore);
+        return app(SocialWorkerPerformanceEvaluator::class)->evaluate($worker, $this->rankingRange(), $managementScore);
     }
 
     #[Computed]

@@ -46,7 +46,7 @@ class SocialWorkerPerformanceEvaluator
 
     public const CHART_MONTHS = 6;
 
-    public function evaluate(SocialWorker $worker, ?array $range = null, ?int $managementScore = null): array
+    public function evaluate(SocialWorker $worker, ?array $range = null, int|float|null $managementScore = null): array
     {
         $range = $this->normalizeRange($range);
         $workerId = (int) $worker->getKey();
@@ -54,11 +54,13 @@ class SocialWorkerPerformanceEvaluator
         $allocations = $this->allocationRows($workerId, $range);
         $deliverySummary = $this->deliverySummary($workerId, $range);
 
-        $mScore = $managementScore !== null ? max(1, min(10, (int) $managementScore)) : 10;
+        $mScore = $managementScore !== null ? max(1.0, min(10.0, (float) $managementScore)) : 10.0;
+        $mScore = round($mScore, 1);
+        $mScoreFormatted = floor($mScore) == $mScore ? (int) $mScore : $mScore;
 
         if ($allocations->isEmpty() && (int) $deliverySummary['count'] === 0) {
             $empty = $this->emptyResult($range);
-            $empty['management_score'] = $mScore;
+            $empty['management_score'] = $mScoreFormatted;
             $empty['base_score'] = 0.0;
 
             return $empty;
@@ -85,7 +87,7 @@ class SocialWorkerPerformanceEvaluator
         return [
             'has_data' => true,
             'base_score' => $baseScore,
-            'management_score' => $mScore,
+            'management_score' => $mScoreFormatted,
             'score' => $totalScore,
             'stars' => $this->stars($totalScore),
             'grade' => $this->grade($totalScore),
@@ -131,14 +133,15 @@ class SocialWorkerPerformanceEvaluator
         foreach ($workerIds as $workerId) {
             $allocations = $allocationsByWorker[$workerId] ?? collect();
             $deliverySummary = $deliverySummaries[$workerId] ?? $this->emptyDeliverySummary();
-            $mScore = isset($managementScores[$workerId]) ? (int) $managementScores[$workerId] : 10;
-            $mScore = max(1, min(10, $mScore));
+            $mScore = isset($managementScores[$workerId]) ? (float) $managementScores[$workerId] : 10.0;
+            $mScore = round(max(1.0, min(10.0, $mScore)), 1);
+            $mScoreFormatted = floor($mScore) == $mScore ? (int) $mScore : $mScore;
 
             if ($allocations->isEmpty() && (int) $deliverySummary['count'] === 0) {
                 $result[$workerId] = [
                     'has_data' => false,
                     'base_score' => 0.0,
-                    'management_score' => $mScore,
+                    'management_score' => $mScoreFormatted,
                     'score' => 0.0,
                     'stars' => 0.0,
                     'grade' => ['label' => 'بدون داده', 'accent' => 'slate'],
@@ -170,7 +173,7 @@ class SocialWorkerPerformanceEvaluator
             $result[$workerId] = [
                 'has_data' => true,
                 'base_score' => $baseScore,
-                'management_score' => $mScore,
+                'management_score' => $mScoreFormatted,
                 'score' => $score,
                 'stars' => $this->stars($score),
                 'grade' => $this->grade($score),

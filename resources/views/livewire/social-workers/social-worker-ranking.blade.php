@@ -241,8 +241,12 @@
                     رتبه‌بندی و ضریب ارزیابی مدیریت مددکاران اجتماعی
                 </h1>
                 <p class="mt-1 text-xs font-semibold text-slate-500">
-                    رتبه‌بندی عملکرد بر اساس شاخص‌های فعالیت و سرعت واکنش در ماه
-                    <span class="font-extrabold text-amber-700">{{ $this->rankingMonthName }} {{ $this->rankingYear }}</span>
+                    رتبه‌بندی عملکرد بر اساس شاخص‌های فعالیت و سرعت واکنش در
+                    @if($rankingMode === 'monthly')
+                        ماه <span class="font-extrabold text-amber-700">{{ $this->rankingMonthName }} {{ $this->rankingYear }}</span>
+                    @else
+                        <span class="font-extrabold text-amber-700">{{ $this->rankingRangeLabel ?? 'بازه زمانی سفارشی' }}</span>
+                    @endif
                 </p>
             </div>
 
@@ -264,53 +268,130 @@
             </div>
         </div>
 
-        {{-- نوار ابزار فیلتر و انتخاب ماه (فشرده و بهینه) --}}
+        {{-- نوار ابزار فیلتر با تفکیک دقیق ارزیابی ماهانه و بازه سفارشی --}}
         <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3.5 print:hidden no-print">
-            {{-- انتخاب ماه و سال ارزیابی --}}
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 text-xs font-black text-slate-700">
-                    <i class="bi bi-calendar-check text-indigo-600"></i>
-                    ماه ارزیابی:
-                </span>
+            <div class="flex flex-wrap items-center gap-2.5">
+                {{-- سوئیچر حالت ماهانه / بازه سفارشی --}}
+                <div class="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+                    <button
+                        type="button"
+                        wire:click="setRankingMode('monthly')"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $rankingMode === 'monthly' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}"
+                    >
+                        <i class="bi bi-calendar-month text-xs"></i>
+                        <span>ارزیابی ماهانه</span>
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="setRankingMode('custom')"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $rankingMode === 'custom' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}"
+                    >
+                        <i class="bi bi-calendar-range text-xs"></i>
+                        <span>بازه سفارشی</span>
+                    </button>
+                </div>
 
-                <select
-                    wire:model.live="rankingMonth"
-                    aria-label="انتخاب ماه ارزیابی"
-                    class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                >
-                    @foreach($this->jalaliMonths as $mNum => $mTitle)
-                        <option value="{{ $mNum }}">{{ $mTitle }}</option>
-                    @endforeach
-                </select>
+                {{-- فیلترهای حالت ماهانه --}}
+                @if($rankingMode === 'monthly')
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <select
+                            wire:model.live="rankingMonth"
+                            aria-label="انتخاب ماه ارزیابی"
+                            class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                        >
+                            @foreach($this->jalaliMonths as $mNum => $mTitle)
+                                <option value="{{ $mNum }}">{{ $mTitle }}</option>
+                            @endforeach
+                        </select>
 
-                <select
-                    wire:model.live="rankingYear"
-                    aria-label="انتخاب سال ارزیابی"
-                    class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                >
-                    @foreach($this->jalaliYears as $yNum)
-                        <option value="{{ $yNum }}">{{ $yNum }}</option>
-                    @endforeach
-                </select>
+                        <select
+                            wire:model.live="rankingYear"
+                            aria-label="انتخاب سال ارزیابی"
+                            class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                        >
+                            @foreach($this->jalaliYears as $yNum)
+                                <option value="{{ $yNum }}">{{ $yNum }}</option>
+                            @endforeach
+                        </select>
 
-                <button
-                    type="button"
-                    wire:click="setRankingToCurrentMonth"
-                    class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                    ماه جاری
-                </button>
+                        <button
+                            type="button"
+                            wire:click="setRankingToCurrentMonth"
+                            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                        >
+                            ماه جاری
+                        </button>
 
-                <button
-                    type="button"
-                    wire:click="setRankingToPreviousMonth"
-                    class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                    ماه قبل
-                </button>
+                        <button
+                            type="button"
+                            wire:click="setRankingToPreviousMonth"
+                            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                        >
+                            ماه قبل
+                        </button>
+                    </div>
+                @else
+                    {{-- فیلترهای حالت بازه سفارشی --}}
+                    <div class="flex items-center gap-1.5">
+                        <div x-data="jalaliDateTimeField($wire.entangle('rankingDateFrom').live)" class="w-24 sm:w-28">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="از تاریخ"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-600 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                            >
+                        </div>
+
+                        <span class="text-[10px] text-slate-400">تا</span>
+
+                        <div x-data="jalaliDateTimeField($wire.entangle('rankingDateTo').live)" class="w-24 sm:w-28">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="تا تاریخ"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-600 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                            >
+                        </div>
+
+                        @if($this->rankingRange)
+                            <button
+                                type="button"
+                                wire:click="clearRankingRange"
+                                title="حذف بازه زمانی و ارزیابی تمام دوران"
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                            >
+                                <i class="bi bi-x text-base"></i>
+                            </button>
+                        @endif
+                    </div>
+                @endif
             </div>
 
-            {{-- فیلترهای تکمیلی (جستجو، وضعیت، بازه تاریخی) --}}
+            {{-- فیلترهای تکمیلی (جستجو و وضعیت) --}}
             <div class="flex flex-wrap items-center gap-2">
                 <div class="relative w-40 sm:w-48">
                     <input
@@ -330,63 +411,6 @@
                     <option value="active">فقط فعالان</option>
                     <option value="inactive">فقط غیرفعالان</option>
                 </select>
-
-                <div class="flex items-center gap-1">
-                    <div x-data="jalaliDateTimeField($wire.entangle('rankingDateFrom').live)" class="w-24">
-                        <input
-                            type="text"
-                            x-ref="input"
-                            x-model="draft"
-                            x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                            x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                            x-on:jalali-picker-open="handlePickerOpen()"
-                            x-on:jalali-picker-close="handlePickerClose()"
-                            x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                            readonly
-                            inputmode="none"
-                            autocomplete="off"
-                            data-jdp-readonly
-                            data-jdp
-                            data-jdp-only-date
-                            placeholder="از تاریخ"
-                            class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-600 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                        >
-                    </div>
-
-                    <span class="text-[10px] text-slate-400">تا</span>
-
-                    <div x-data="jalaliDateTimeField($wire.entangle('rankingDateTo').live)" class="w-24">
-                        <input
-                            type="text"
-                            x-ref="input"
-                            x-model="draft"
-                            x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                            x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                            x-on:jalali-picker-open="handlePickerOpen()"
-                            x-on:jalali-picker-close="handlePickerClose()"
-                            x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                            readonly
-                            inputmode="none"
-                            autocomplete="off"
-                            data-jdp-readonly
-                            data-jdp
-                            data-jdp-only-date
-                            placeholder="تا تاریخ"
-                            class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-bold text-slate-600 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                        >
-                    </div>
-
-                    @if($this->rankingRange)
-                        <button
-                            type="button"
-                            wire:click="clearRankingRange"
-                            title="حذف بازه زمانی"
-                            class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
-                        >
-                            <i class="bi bi-x text-base"></i>
-                        </button>
-                    @endif
-                </div>
             </div>
         </div>
 
@@ -535,32 +559,44 @@
                     <div class="flex items-center gap-1.5" @click.stop @mousedown.stop>
                         <span class="text-[10px] font-black text-slate-600">ضریب مدیریت:</span>
 
-                        @if($isManager)
-                            <div class="relative flex items-center" @click.stop @mousedown.stop>
-                                <select
-                                    @click.stop
-                                    @mousedown.stop
-                                    wire:change="updateManagementScore({{ $row['id'] }}, $event.target.value)"
-                                    wire:loading.attr="disabled"
-                                    wire:target="updateManagementScore({{ $row['id'] }}, $event.target.value)"
-                                    class="rounded-lg border border-amber-300 bg-amber-50/70 py-1 pr-2 pl-6 text-xs font-black text-amber-950 outline-none transition hover:bg-amber-100/70 focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-200 disabled:opacity-50"
-                                    title="تغییر ضریب ارزیابی مدیریت برای ماه {{ $this->rankingMonthName }}"
-                                >
-                                    @for($s = 10; $s >= 1; $s--)
-                                        <option value="{{ $s }}" @selected($row['management_score'] === $s)>
-                                            {{ $s }} {{ $s === 10 ? '(پیش‌فرض)' : '' }}
-                                        </option>
-                                    @endfor
-                                </select>
+                        @if($rankingMode === 'monthly')
+                            @if($isManager)
+                                <div class="relative flex items-center" @click.stop @mousedown.stop>
+                                    <select
+                                        @click.stop
+                                        @mousedown.stop
+                                        wire:change="updateManagementScore({{ $row['id'] }}, $event.target.value)"
+                                        wire:loading.attr="disabled"
+                                        wire:target="updateManagementScore({{ $row['id'] }}, $event.target.value)"
+                                        class="rounded-lg border border-amber-300 bg-amber-50/70 py-1 pr-2 pl-6 text-xs font-black text-amber-950 outline-none transition hover:bg-amber-100/70 focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-200 disabled:opacity-50"
+                                        title="تغییر ضریب ارزیابی مدیریت برای ماه {{ $this->rankingMonthName }}"
+                                    >
+                                        @for($s = 10; $s >= 1; $s--)
+                                            <option value="{{ $s }}" @selected((int) round($row['management_score']) === $s)>
+                                                {{ $s }} {{ $s === 10 ? '(پیش‌فرض)' : '' }}
+                                            </option>
+                                        @endfor
+                                    </select>
 
-                                <svg wire:loading wire:target="updateManagementScore({{ $row['id'] }}, $event.target.value)" class="absolute left-1.5 h-3.5 w-3.5 animate-spin text-amber-600" viewBox="0 0 24 24" fill="none">
-                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
-                                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
-                                </svg>
-                            </div>
+                                    <svg wire:loading wire:target="updateManagementScore({{ $row['id'] }}, $event.target.value)" class="absolute left-1.5 h-3.5 w-3.5 animate-spin text-amber-600" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                                        <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                                    </svg>
+                                </div>
+                            @else
+                                <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-700">
+                                    {{ (int) round($row['management_score']) }} از ۱۰
+                                </span>
+                            @endif
                         @else
-                            <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-700">
-                                {{ $row['management_score'] }} از ۱۰
+                            {{-- در حالت بازه سفارشی، ضریب مدیریت میانگین ماه‌های این بازه است --}}
+                            <span
+                                class="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-black text-amber-900 ring-1 ring-amber-200/70"
+                                title="در بازه سفارشی، ضریب مدیریت میانگین ماه‌های تحت پوشش این بازه است."
+                            >
+                                <i class="bi bi-calculator text-[10px]"></i>
+                                <span>{{ number_format($row['management_score'], 1) }}</span>
+                                <span class="text-[9px] font-semibold text-amber-700">(میانگین)</span>
                             </span>
                         @endif
                     </div>
@@ -569,7 +605,7 @@
                     <div>
                         @if($row['management_score'] < 10)
                             <span class="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md ring-1 ring-rose-200/60" title="امتیاز عملکرد × (ضریب مدیریت ÷ ۱۰)">
-                                پایه: {{ number_format($row['base_score'], 1) }} × {{ $row['management_score'] / 10 }}
+                                پایه: {{ number_format($row['base_score'], 1) }} × {{ round($row['management_score'] / 10, 2) }}
                             </span>
                         @else
                             <span class="text-[9px] font-semibold text-slate-400">

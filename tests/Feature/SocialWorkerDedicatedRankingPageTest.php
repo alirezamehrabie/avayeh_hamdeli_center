@@ -344,6 +344,89 @@ class SocialWorkerDedicatedRankingPageTest extends TestCase
         $component->assertSee('مددکار برتر نمایش داده شده‌اند');
     }
 
+    public function test_mode_toggle_between_monthly_and_custom_range(): void
+    {
+        $manager = $this->managerUser();
+        $this->actingAs($manager);
+
+        $component = Livewire::test(SocialWorkerRanking::class)
+            ->assertSet('rankingMode', 'monthly')
+            ->call('setRankingMode', 'custom')
+            ->assertSet('rankingMode', 'custom');
+
+        // بازگشت با تغییر ماه به حالت monthly
+        $component->call('selectRankingMonth', 5)
+            ->assertSet('rankingMode', 'monthly')
+            ->assertSet('rankingMonth', 5);
+
+        // تغییر تاریخ دستی باید حالت را به custom ببرد
+        $component->set('rankingDateFrom', '1404/01/01')
+            ->assertSet('rankingMode', 'custom');
+    }
+
+    public function test_custom_range_auto_swaps_dates_when_from_is_after_to(): void
+    {
+        $manager = $this->managerUser();
+        $this->actingAs($manager);
+
+        $component = Livewire::test(SocialWorkerRanking::class)
+            ->call('setRankingMode', 'custom')
+            ->set('rankingDateFrom', '1404/05/10')
+            ->set('rankingDateTo', '1404/02/01');
+
+        $range = $component->instance()->rankingRange();
+        $this->assertNotNull($range);
+        $from = $range['from'];
+        $to = $range['to'];
+
+        // تاریخ کوچکتر باید به عنوان $from و بزرگتر $to قرار گیرد
+        $this->assertTrue($from->lte($to));
+    }
+
+    public function test_custom_range_averages_multi_month_management_scores(): void
+    {
+        $manager = $this->managerUser();
+        $worker = $this->worker(9430, 'AverageTest');
+
+        // ثبت ضریب ماه ۱: 8
+        \App\Models\SocialWorkerManagementScore::create([
+            'social_worker_id' => $worker->id,
+            'year' => 1404,
+            'month' => 1,
+            'score' => 8,
+            'updated_by' => $manager->id,
+        ]);
+
+        // ثبت ضریب ماه ۲: 6
+        \App\Models\SocialWorkerManagementScore::create([
+            'social_worker_id' => $worker->id,
+            'year' => 1404,
+            'month' => 2,
+            'score' => 6,
+            'updated_by' => $manager->id,
+        ]);
+
+        // ماه ۳ ثبت نشده است (پیش‌فرض: 10)
+        // میانگین سه ماه: (8 + 6 + 10) / 3 = 24 / 3 = 8.0
+
+        $this->actingAs($manager);
+
+        $component = Livewire::test(SocialWorkerRanking::class)
+            ->call('setRankingMode', 'custom')
+            ->set('rankingDateFrom', '1404/01/01')
+            ->set('rankingDateTo', '1404/03/31');
+
+        $ranking = $component->instance()->ranking();
+        $workerRow = collect($ranking['rows'])->firstWhere('id', $worker->id);
+
+        $this->assertNotNull($workerRow);
+        $this->assertEquals(8.0, $workerRow['management_score']);
+
+        // ثبت ضریب در حالت سفارشی باید خطا بدهد
+        $component->call('updateManagementScore', $worker->id, 9)
+            ->assertSet('rankingErrorMessage', 'تغییر ضریب ارزیابی مدیریت فقط در حالت ارزیابی ماهانه امکان‌پذیر است.');
+    }
+
     private function managerUser(): User
     {
         return User::factory()->create([
