@@ -1,63 +1,49 @@
-<div class="mx-auto max-w-7xl space-y-6">
-    {{-- هدر صفحه و تب‌ها --}}
-    <div class="rounded-2xl border border-cyan-100 bg-gradient-to-br from-white via-cyan-50/20 to-white p-3.5 shadow-sm sm:p-6">
-        <div class="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
+<div class="mx-auto max-w-7xl space-y-5">
+    {{-- هدر صفحه و ابزارهای سریع --}}
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-600 to-sky-700 text-white shadow-md shadow-cyan-200/50 sm:h-12 sm:w-12 sm:rounded-2xl">
-                    <i class="fa fa-bullhorn text-lg sm:text-xl"></i>
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700 shadow-sm sm:h-12 sm:w-12">
+                    <i class="bi bi-megaphone-fill text-xl sm:text-2xl text-indigo-600"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-extrabold text-slate-800 sm:text-2xl">پیام‌های الزامی مدیریت</h1>
+                    <h1 class="text-lg font-black text-slate-800 sm:text-2xl">ابلاغ پیام و اطلاعیه</h1>
                     <p class="mt-0.5 text-xs text-slate-500 line-clamp-1 sm:line-clamp-none sm:text-sm">
-                        ابلاغ پیام، دستورالعمل‌ها، اطلاع‌رسانی به مددکاران اجتماعی
+                        ثبت، ابلاغ پیام‌ها و دستورالعمل‌های مدیریتی و پایش وضعیت مشاهده و تاییدیه مددکاران
                     </p>
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
                 @if ($activeTab === 'list')
-                    {{-- شمارنده و وضعیت تاریخچه پیام‌ها --}}
-                    <div class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm sm:px-3.5 sm:py-2.5 sm:text-sm">
-                        <i class="fa fa-list text-slate-400"></i>
+                    {{-- شمارنده تاریخچه پیام‌ها --}}
+                    <div class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm sm:px-3.5 sm:py-2">
+                        <i class="bi bi-card-checklist text-indigo-600"></i>
                         <span>تاریخچه پیام‌ها:</span>
-                        <span class="rounded-full bg-cyan-50 px-2 py-0.5 text-xs font-extrabold text-cyan-700 border border-cyan-100">
+                        <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-black text-indigo-800 border border-indigo-200">
                             {{ $announcements->total() }}
                         </span>
                     </div>
 
-                    {{-- دکمه شاخص، چشم‌نواز و دارای اولویت بالا برای ثبت پیام جدید --}}
+                    {{-- دکمه ثبت پیام جدید هماهنگ با دیزاین سیستم --}}
                     <button
                         type="button"
                         wire:click="startCreate"
-                        class="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-cyan-600 via-sky-600 to-cyan-700 px-4 py-2 text-xs font-black text-white shadow-md shadow-cyan-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-600/40 focus:outline-none focus:ring-4 focus:ring-cyan-200 active:translate-y-0 sm:px-5 sm:py-2.5 sm:text-sm"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 active:scale-95 sm:px-4 sm:py-2 sm:text-sm"
                     >
-                        <span class="flex h-5 w-5 items-center justify-center rounded-lg bg-white/20 text-white transition-transform duration-200 group-hover:scale-110 group-hover:bg-white/30 sm:h-6 sm:w-6">
-                            <i class="fa fa-plus text-[10px] sm:text-xs"></i>
-                        </span>
-                        <span class="tracking-wide">ثبت پیام جدید</span>
+                        <i class="bi bi-plus-lg text-sm"></i>
+                        <span>ثبت پیام جدید</span>
                     </button>
                 @else
                     {{-- دکمه بازگشت به لیست پیام‌ها --}}
                     <button
                         type="button"
                         wire:click="switchTab('list')"
-                        class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:px-4 sm:py-2.5 sm:text-sm"
+                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:px-4 sm:py-2.5 sm:text-sm"
                     >
-                        <i class="fa fa-arrow-right text-slate-500"></i>
+                        <i class="bi bi-arrow-right text-slate-500"></i>
                         <span>بازگشت به لیست پیام‌ها</span>
                     </button>
-
-                    @if ($editingAnnouncementId)
-                        <div class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-amber-600 to-orange-600 px-3.5 py-2 text-xs font-black text-white shadow-sm sm:px-4 sm:py-2.5 sm:text-sm">
-                            <i class="fa fa-pencil-square-o text-amber-200"></i>
-                            <span>فرم ویرایش پیام (کد #{{ $editingAnnouncementId }})</span>
-                        </div>
-                    @else
-                        <div class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-cyan-600 to-sky-700 px-3.5 py-2 text-xs font-black text-white shadow-sm sm:px-4 sm:py-2.5 sm:text-sm">
-                            <i class="fa fa-pen-fancy text-cyan-200"></i>
-                            <span>فرم ثبت پیام جدید</span>
-                        </div>
-                    @endif
                 @endif
             </div>
         </div>
@@ -66,14 +52,14 @@
     {{-- پیام‌های سیستمی --}}
     @if (session()->has('success'))
         <div class="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-emerald-800 shadow-sm">
-            <i class="fa fa-check-circle text-lg text-emerald-600"></i>
+            <i class="bi bi-check-circle-fill text-lg text-emerald-600"></i>
             <span class="text-sm font-bold">{{ session('success') }}</span>
         </div>
     @endif
 
     @if (session()->has('error'))
         <div class="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/90 p-4 text-rose-800 shadow-sm">
-            <i class="fa fa-exclamation-triangle text-lg text-rose-600"></i>
+            <i class="bi bi-exclamation-triangle-fill text-lg text-rose-600"></i>
             <span class="text-sm font-bold">{{ session('error') }}</span>
         </div>
     @endif
@@ -81,32 +67,36 @@
     {{-- تب اول: لیست پیام‌ها --}}
     @if ($activeTab === 'list')
         <div class="space-y-3.5">
-            {{-- فیلترها و جستجو (کاملاً ریسپانسیو و بهینه) --}}
-            <div class="flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:rounded-2xl sm:p-4">
+            {{-- فیلترها و جستجو (کاملاً ریسپانسیو و منطبق با دیزاین سیستم) --}}
+            <div class="flex flex-col gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-4">
                 <div class="relative w-full sm:max-w-md">
                     <input
                         type="text"
                         wire:model.live.debounce.350ms="search"
                         placeholder="جستجو در عنوان یا متن پیام‌ها..."
-                        class="w-full rounded-xl border border-slate-300 bg-slate-50/50 py-2 pl-4 pr-9 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-100 sm:py-2.5 sm:pr-10 sm:text-sm"
+                        class="w-full rounded-xl border border-slate-300 bg-slate-50/60 py-2 pl-4 pr-9 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 sm:py-2.5 sm:pr-10 sm:text-sm"
                     />
-                    <i class="fa fa-search absolute right-3 top-2.5 text-xs text-slate-400 sm:top-3.5 sm:text-sm"></i>
+                    <i class="bi bi-search absolute right-3 top-2.5 text-xs text-slate-400 sm:top-3.5 sm:text-sm"></i>
                     @if($search !== '')
                         <button
                             type="button"
                             wire:click="$set('search', '')"
                             class="absolute left-3 top-2 text-slate-400 hover:text-slate-600 sm:top-3"
+                            title="پاک کردن جستجو"
                         >
-                            <i class="fa fa-times-circle"></i>
+                            <i class="bi bi-x-circle-fill text-sm"></i>
                         </button>
                     @endif
                 </div>
 
                 <div class="flex items-center justify-between gap-2 sm:justify-end">
-                    <label class="whitespace-nowrap text-xs font-bold text-slate-500">اولویت:</label>
+                    <label class="whitespace-nowrap text-xs font-bold text-slate-500 inline-flex items-center gap-1">
+                        <i class="bi bi-funnel text-indigo-600"></i>
+                        <span>اولویت:</span>
+                    </label>
                     <select
                         wire:model.live="priorityFilter"
-                        class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100 sm:flex-none sm:py-2 sm:text-sm"
+                        class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 sm:flex-none sm:py-2 sm:text-sm"
                     >
                         <option value="all">همه اولویت‌ها</option>
                         <option value="{{ \App\Models\MandatoryAnnouncement::PRIORITY_NORMAL }}">عادی</option>
@@ -116,13 +106,26 @@
                 </div>
             </div>
 
+            {{-- نوار نشانگر بارگذاری زنده هنگام فیلتر --}}
+            <div
+                wire:loading
+                wire:target="search, priorityFilter"
+                class="flex items-center justify-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/90 py-2 px-4 text-xs font-bold text-indigo-700 shadow-sm transition"
+            >
+                <svg class="h-4 w-4 animate-spin text-indigo-600" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                </svg>
+                <span>در حال به‌روزرسانی و فیلتر پیام‌ها...</span>
+            </div>
+
             {{-- لیست کارت‌ها --}}
             @if ($announcements->isEmpty())
                 <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm sm:p-12">
-                    <div class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400 sm:h-16 sm:w-16">
-                        <i class="fa fa-bullhorn text-xl sm:text-2xl"></i>
+                    <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500 sm:h-16 sm:w-16">
+                        <i class="bi bi-megaphone text-2xl sm:text-3xl text-indigo-400"></i>
                     </div>
-                    <h3 class="mt-3 text-sm font-bold text-slate-700 sm:mt-4 sm:text-base">هیچ پیامی یافت نشد</h3>
+                    <h3 class="mt-3 text-sm font-black text-slate-800 sm:mt-4 sm:text-base">هیچ پیامی یافت نشد</h3>
                     <p class="mt-1 text-xs text-slate-500 sm:text-sm">
                         @if ($search !== '' || $priorityFilter !== 'all')
                             با توجه به فیلترهای جستجو موردی پیدا نشد. می‌توانید فیلترها را پاک کنید.
@@ -134,15 +137,19 @@
                         <button
                             type="button"
                             wire:click="startCreate"
-                            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-l from-cyan-600 via-sky-600 to-cyan-700 px-4 py-2 text-xs font-black text-white shadow-md shadow-cyan-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan-600/40 focus:outline-none focus:ring-4 focus:ring-cyan-200 active:translate-y-0 sm:px-5 sm:py-2.5 sm:text-sm"
+                            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:px-5 sm:py-2.5 sm:text-sm"
                         >
-                            <i class="fa fa-plus-circle text-xs sm:text-sm"></i>
+                            <i class="bi bi-plus-lg text-xs sm:text-sm"></i>
                             <span>ثبت اولین پیام</span>
                         </button>
                     @endif
                 </div>
             @else
-                <div class="space-y-3">
+                <div
+                    class="space-y-3 transition-opacity duration-200"
+                    wire:loading.class="opacity-50 pointer-events-none"
+                    wire:target="search, priorityFilter"
+                >
                     @foreach ($announcements as $announcement)
                         @php
                             $totalRecipients = $announcement->recipients_count;
@@ -150,9 +157,13 @@
                             $readPercent = $totalRecipients > 0 ? (int) round(($readCount / $totalRecipients) * 100) : 0;
                             $allRead = $totalRecipients > 0 && $readCount === $totalRecipients;
                         @endphp
-                        {{-- کارت کم‌ارتفاع، فشرده، چشم‌نواز و بهینه --}}
-                        <div class="group relative overflow-hidden rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm transition hover:border-cyan-300 hover:shadow-md sm:rounded-2xl sm:p-4">
-                            {{-- نوار رنگی باریک اولویت در لبه راست --}}
+                        {{-- کارت مدرن با استیت مطالعه بازشونده در فرانت‌اند --}}
+                        <div
+                            wire:key="announcement-card-{{ $announcement->id }}"
+                            x-data="{ expanded: false }"
+                            class="group relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm transition hover:border-indigo-300 hover:shadow-md sm:p-5"
+                        >
+                            {{-- نوار رنگی شاخص اولویت در لبه راست --}}
                             <span class="absolute inset-y-0 right-0 w-1 sm:w-1.5 {{ match($announcement->priority) {
                                 \App\Models\MandatoryAnnouncement::PRIORITY_NORMAL => 'bg-blue-500',
                                 \App\Models\MandatoryAnnouncement::PRIORITY_IMPORTANT => 'bg-amber-500',
@@ -160,116 +171,126 @@
                                 default => 'bg-amber-500'
                             } }}"></span>
 
-                            <div class="flex flex-col gap-2 pr-2.5 sm:pr-3">
+                            <div class="flex flex-col gap-2.5 pr-2.5 sm:pr-3">
                                 {{-- ردیف فوقانی: بج‌های خلاصه، اولویت و تاریخ --}}
-                                <div class="flex flex-wrap items-center justify-between gap-1.5">
-                                    <div class="flex flex-wrap items-center gap-1.5">
-                                        {{-- بج اولویت فشرده --}}
-                                        <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold sm:text-xs {{ $announcement->priorityBadgeClasses() }}">
-                                            <i class="fa {{ match($announcement->priority) {
-                                                \App\Models\MandatoryAnnouncement::PRIORITY_NORMAL => 'fa-info-circle',
-                                                \App\Models\MandatoryAnnouncement::PRIORITY_IMPORTANT => 'fa-exclamation-triangle',
-                                                \App\Models\MandatoryAnnouncement::PRIORITY_URGENT => 'fa-bell fa-spin',
-                                                default => 'fa-info-circle'
-                                            } }}"></i>
-                                            اولویت: {{ $announcement->priorityLabel() }}
+                                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                        {{-- بج اولویت فشرده و استاندارد با Bootstrap Icons --}}
+                                        <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-black {{ $announcement->priorityBadgeClasses() }}">
+                                            <i class="bi {{ $announcement->priorityIcon() }}"></i>
+                                            <span>اولویت: {{ $announcement->priorityLabel() }}</span>
                                         </span>
 
-                                        {{-- بج مسدودسازی فشرده --}}
+                                        {{-- بج مسدودسازی --}}
                                         @if ($announcement->is_blocking)
-                                            <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 sm:text-[11px]">
-                                                <i class="fa fa-lock text-[9px] sm:text-[10px]"></i>
-                                                مسدودکننده پنل
+                                            <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-[11px] font-bold text-rose-700">
+                                                <i class="bi bi-lock-fill text-[10px]"></i>
+                                                <span>مسدودکننده پنل</span>
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-600 sm:text-[11px]">
-                                                <i class="fa fa-unlock text-[9px] sm:text-[10px]"></i>
-                                                اطلاعیه عادی
+                                            <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">
+                                                <i class="bi bi-unlock-fill text-[10px]"></i>
+                                                <span>اطلاعیه عادی</span>
                                             </span>
                                         @endif
 
-                                        {{-- بج دامنه مخاطبان فشرده --}}
+                                        {{-- بج دامنه مخاطبان --}}
                                         @if ($announcement->target_type === \App\Models\MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS)
-                                            <span class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 sm:text-[11px]">
-                                                <i class="fa fa-users text-[9px] sm:text-[10px]"></i>
-                                                همه مددکاران اجتماعی
+                                            <span class="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">
+                                                <i class="bi bi-people-fill text-[11px]"></i>
+                                                <span>همه مددکاران اجتماعی</span>
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700 sm:text-[11px]">
-                                                <i class="fa fa-user-check text-[9px] sm:text-[10px]"></i>
-                                                مددکاران منتخب ({{ $totalRecipients }} نفر)
+                                            <span class="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-bold text-sky-700">
+                                                <i class="bi bi-person-check-fill text-[11px]"></i>
+                                                <span>مددکاران منتخب ({{ $totalRecipients }} نفر)</span>
                                             </span>
                                         @endif
 
-                                        {{-- زمان مطالعه الزامی فشرده --}}
+                                        {{-- زمان مطالعه الزامی --}}
                                         @if ($announcement->min_reading_seconds > 0)
-                                            <span class="hidden items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 sm:inline-flex sm:text-[11px]">
-                                                <i class="fa fa-clock-o text-[9px] sm:text-[10px]"></i>
-                                                {{ $announcement->min_reading_seconds }} ثانیه
+                                            <span class="hidden sm:inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                                <i class="bi bi-clock-history text-[11px]"></i>
+                                                <span>{{ $announcement->min_reading_seconds }} ثانیه مطالعه الزامی</span>
                                             </span>
                                         @endif
                                     </div>
 
-                                    <div class="text-[11px] text-slate-400 whitespace-nowrap">
-                                        <i class="fa fa-calendar-alt ml-1"></i>
-                                        {{ $this->formatJalaliDate($announcement->created_at) }}
+                                    <div class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 whitespace-nowrap">
+                                        <i class="bi bi-calendar3 text-slate-400"></i>
+                                        <span>{{ $this->formatJalaliDate($announcement->created_at) }}</span>
                                     </div>
                                 </div>
 
-                                {{-- عنوان و متن با ارتفاع کنترل‌شده و تک‌خطی/دوخطی --}}
-                                <div>
-                                    <h2 class="text-sm font-extrabold text-slate-800 line-clamp-1 sm:text-base">
+                                {{-- عنوان و متن ابلاغیه با قابلیت مطالعه کامل متن --}}
+                                <div class="py-1">
+                                    <h2 class="text-sm sm:text-base font-black text-slate-900">
                                         {{ $announcement->title }}
                                     </h2>
-                                    <p class="mt-0.5 line-clamp-1 text-xs leading-relaxed text-slate-500 sm:line-clamp-2">
-                                        {{ $announcement->body }}
-                                    </p>
+
+                                    <div class="mt-1">
+                                        <div
+                                            class="text-xs sm:text-[13px] leading-relaxed text-slate-600 whitespace-pre-line"
+                                            :class="expanded ? '' : 'line-clamp-2'"
+                                        >{{ $announcement->body }}</div>
+
+                                        @if(mb_strlen($announcement->body) > 120 || str_contains($announcement->body, "\n"))
+                                            <button
+                                                type="button"
+                                                @click="expanded = !expanded"
+                                                class="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition focus:outline-none"
+                                            >
+                                                <span x-text="expanded ? 'بستن متن کامل پیام' : 'مشاهده متن کامل پیام'"></span>
+                                                <i class="bi text-[10px] transition-transform duration-200" :class="expanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 {{-- نوار پایینی: وضعیت مشاهده فشرده + دکمه‌های اکشن بهینه --}}
-                                <div class="flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                                    {{-- نوار باریک درصد و وضعیت مشاهده --}}
-                                    <div class="flex items-center gap-2 sm:max-w-xs flex-1">
+                                <div class="flex flex-col gap-2.5 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                                    {{-- نوار درصد و وضعیت مشاهده --}}
+                                    <div class="flex items-center gap-2 sm:max-w-sm flex-1">
                                         <div class="w-full">
-                                            <div class="mb-0.5 flex items-center justify-between text-[11px] font-bold">
+                                            <div class="mb-1 flex items-center justify-between text-[11px] font-bold">
                                                 <span class="{{ $allRead ? 'text-emerald-700' : 'text-slate-600' }}">
-                                                    وضعیت مشاهده: {{ $readCount }} از {{ $totalRecipients }} مددکار
+                                                    وضعیت تایید: <strong class="font-black {{ $allRead ? 'text-emerald-700' : 'text-slate-800' }}">{{ $readCount }}</strong> از {{ $totalRecipients }} مددکار
                                                     @if($allRead)
-                                                        <i class="fa fa-check-double text-emerald-600 mr-1"></i>
+                                                        <i class="bi bi-check2-all text-emerald-600 mr-1 text-xs"></i>
                                                     @endif
                                                 </span>
-                                                <span class="{{ $allRead ? 'text-emerald-700' : 'text-cyan-700' }}">
+                                                <span class="font-black {{ $allRead ? 'text-emerald-700' : 'text-indigo-700' }}">
                                                     {{ $readPercent }}%
                                                 </span>
                                             </div>
-                                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                                                 <div
-                                                    class="h-full rounded-full transition-all duration-500 {{ $allRead ? 'bg-emerald-500' : 'bg-cyan-500' }}"
+                                                    class="h-full rounded-full transition-all duration-500 {{ $allRead ? 'bg-emerald-500' : 'bg-indigo-600' }}"
                                                     style="width: {{ $readPercent }}%"
                                                 ></div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {{-- دکمه‌های اکشن: چینش یکنواخت، لمس‌پذیر و مرتب در موبایل و دسکتاپ --}}
+                                    {{-- دکمه‌های اکشن هماهنگ با دیزاین سیستم --}}
                                     <div class="flex items-center gap-1.5 self-end sm:self-center">
                                         <button
                                             type="button"
                                             wire:click="openAuditModal({{ $announcement->id }})"
-                                            class="inline-flex items-center gap-1 rounded-lg border border-cyan-200 bg-cyan-50 px-2.5 py-1.5 text-xs font-bold text-cyan-800 transition hover:bg-cyan-100 active:scale-95"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 px-2.5 py-1.5 text-xs font-bold text-indigo-800 transition hover:bg-indigo-100 active:scale-95 shadow-sm"
                                             title="مشاهده فهرست مددکاران، زمان دقیق تایید و مشخصات اتصال"
                                         >
-                                            <i class="fa fa-shield-alt text-cyan-600 text-[11px]"></i>
+                                            <i class="bi bi-shield-check text-indigo-600 text-xs"></i>
                                             <span>رهگیری</span>
                                         </button>
 
                                         <button
                                             type="button"
                                             wire:click="editAnnouncement({{ $announcement->id }})"
-                                            class="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 active:scale-95"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-100 active:scale-95 shadow-sm"
                                             title="ویرایش عنوان، محتوا و تنظیمات پیام"
                                         >
-                                            <i class="fa fa-pencil-square-o text-amber-600 text-[11px]"></i>
+                                            <i class="bi bi-pencil-square text-amber-600 text-xs"></i>
                                             <span>ویرایش</span>
                                         </button>
 
@@ -277,10 +298,10 @@
                                             type="button"
                                             wire:click="deleteAnnouncement({{ $announcement->id }})"
                                             wire:confirm="آیا از حذف این پیام و تمامی تاییدیه‌های آن اطمینان دارید؟ این عمل غیرقابل برگشت است."
-                                            class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50/70 px-2.5 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95 shadow-sm"
                                             title="حذف پیام"
                                         >
-                                            <i class="fa fa-trash text-[11px]"></i>
+                                            <i class="bi bi-trash3 text-rose-600 text-xs"></i>
                                             <span>حذف</span>
                                         </button>
                                     </div>
@@ -300,19 +321,19 @@
 
     {{-- تب دوم: فرم ایجاد یا ویرایش پیام (ریسپانسیو و بهینه برای موبایل و دسکتاپ) --}}
     @if ($activeTab === 'create')
-        <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-2xl sm:p-6">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             <div class="mb-4 flex items-start justify-between border-b border-slate-100 pb-3 sm:mb-6 sm:pb-4">
                 <div>
                     @if ($editingAnnouncementId)
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-lg bg-amber-100 px-2 py-0.5 text-[11px] font-black text-amber-800 sm:text-xs">حالت ویرایش</span>
-                            <h2 class="text-base font-extrabold text-slate-800 sm:text-xl">ویرایش پیام ابلاغی به مددکاران</h2>
+                            <span class="rounded-lg bg-amber-100 px-2.5 py-0.5 text-[11px] font-black text-amber-800 sm:text-xs">حالت ویرایش</span>
+                            <h2 class="text-base font-black text-slate-800 sm:text-xl">ویرایش پیام ابلاغی به مددکاران</h2>
                         </div>
                         <p class="mt-1 text-xs text-slate-500 sm:text-sm">
                             می‌توانید عنوان، متن، سطح اولویت، دامنه مخاطبان و تنظیمات مطالعه پیام را تغییر دهید.
                         </p>
                     @else
-                        <h2 class="text-base font-extrabold text-slate-800 sm:text-xl">ثبت و ابلاغ پیام جدید به مددکاران</h2>
+                        <h2 class="text-base font-black text-slate-800 sm:text-xl">ثبت و ابلاغ پیام جدید به مددکاران</h2>
                         <p class="mt-1 text-xs text-slate-500 sm:text-sm">
                             این پیام در زمان ورود مددکار به پنل خود به صورت خودکار و مسدودکننده نمایش داده خواهد شد.
                         </p>
@@ -321,9 +342,10 @@
                 <button
                     type="button"
                     wire:click="switchTab('list')"
-                    class="rounded-xl border border-slate-200 p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 sm:p-2"
+                    class="rounded-xl border border-slate-200 p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition sm:p-2"
+                    title="بستن فرم"
                 >
-                    <i class="fa fa-times text-base sm:text-lg"></i>
+                    <i class="bi bi-x-lg text-base"></i>
                 </button>
             </div>
 
@@ -337,7 +359,7 @@
                         type="text"
                         wire:model="title"
                         placeholder="مثال: دستورالعمل اجرایی توزیع بسته‌های حمایتی زمستانه"
-                        class="w-full rounded-xl border {{ $errors->has('title') ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-300 focus:border-cyan-500 focus:ring-cyan-100' }} px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:ring-4 sm:px-4 sm:py-3 sm:text-sm"
+                        class="w-full rounded-xl border {{ $errors->has('title') ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-100' }} px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:ring-4 sm:px-4 sm:py-3 sm:text-sm"
                     />
                     @error('title')
                         <p class="mt-1.5 text-xs font-bold text-rose-600">{{ $message }}</p>
@@ -350,7 +372,7 @@
                         سطح اولویت پیام <span class="text-rose-500">*</span>
                     </label>
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-                        <label class="relative flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $priority === \App\Models\MandatoryAnnouncement::PRIORITY_NORMAL ? 'border-blue-400 bg-blue-50/50 ring-2 ring-blue-200' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <label class="relative flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $priority === \App\Models\MandatoryAnnouncement::PRIORITY_NORMAL ? 'border-blue-400 bg-blue-50/60 ring-2 ring-blue-200' : 'border-slate-200 hover:bg-slate-50' }}">
                             <input
                                 type="radio"
                                 wire:model.live="priority"
@@ -358,12 +380,12 @@
                                 class="text-blue-600 focus:ring-blue-500"
                             />
                             <div>
-                                <span class="block text-xs font-extrabold text-blue-900 sm:text-sm">عادی</span>
+                                <span class="block text-xs font-black text-blue-900 sm:text-sm">عادی</span>
                                 <span class="text-[10px] text-blue-600 sm:text-[11px]">اطلاع‌رسانی عمومی و اخبار اداری</span>
                             </div>
                         </label>
 
-                        <label class="relative flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $priority === \App\Models\MandatoryAnnouncement::PRIORITY_IMPORTANT ? 'border-amber-400 bg-amber-50/50 ring-2 ring-amber-200' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <label class="relative flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $priority === \App\Models\MandatoryAnnouncement::PRIORITY_IMPORTANT ? 'border-amber-400 bg-amber-50/60 ring-2 ring-amber-200' : 'border-slate-200 hover:bg-slate-50' }}">
                             <input
                                 type="radio"
                                 wire:model.live="priority"
@@ -371,12 +393,12 @@
                                 class="text-amber-600 focus:ring-amber-500"
                             />
                             <div>
-                                <span class="block text-xs font-extrabold text-amber-900 sm:text-sm">مهم (پیش‌فرض)</span>
+                                <span class="block text-xs font-black text-amber-900 sm:text-sm">مهم (پیش‌فرض)</span>
                                 <span class="text-[10px] text-amber-700 sm:text-[11px]">دستورالعمل‌ها و تغییر روال‌های کاری</span>
                             </div>
                         </label>
 
-                        <label class="relative flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $priority === \App\Models\MandatoryAnnouncement::PRIORITY_URGENT ? 'border-rose-400 bg-rose-50/50 ring-2 ring-rose-200' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <label class="relative flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $priority === \App\Models\MandatoryAnnouncement::PRIORITY_URGENT ? 'border-rose-400 bg-rose-50/60 ring-2 ring-rose-200' : 'border-slate-200 hover:bg-slate-50' }}">
                             <input
                                 type="radio"
                                 wire:model.live="priority"
@@ -384,7 +406,7 @@
                                 class="text-rose-600 focus:ring-rose-500"
                             />
                             <div>
-                                <span class="block text-xs font-extrabold text-rose-900 sm:text-sm">بسیار فوری / اضطراری</span>
+                                <span class="block text-xs font-black text-rose-900 sm:text-sm">بسیار فوری / اضطراری</span>
                                 <span class="text-[10px] text-rose-600 sm:text-[11px]">هشدارهای امنیتی یا تغییرات سریع و حیاتی</span>
                             </div>
                         </label>
@@ -403,7 +425,7 @@
                         wire:model="body"
                         rows="5"
                         placeholder="متن کامل پیام یا دستورالعمل مدیریتی را با دقت وارد فرمایید..."
-                        class="w-full rounded-xl border {{ $errors->has('body') ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-300 focus:border-cyan-500 focus:ring-cyan-100' }} p-3 text-xs leading-relaxed text-slate-800 placeholder-slate-400 outline-none transition focus:ring-4 sm:p-4 sm:text-sm"
+                        class="w-full rounded-xl border {{ $errors->has('body') ? 'border-rose-400 focus:ring-rose-100' : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-100' }} p-3 text-xs leading-relaxed text-slate-800 placeholder-slate-400 outline-none transition focus:ring-4 sm:p-4 sm:text-sm"
                     ></textarea>
                     @error('body')
                         <p class="mt-1.5 text-xs font-bold text-rose-600">{{ $message }}</p>
@@ -416,28 +438,28 @@
                         دامنه ارسال مخاطبان <span class="text-rose-500">*</span>
                     </label>
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
-                        <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $targetType === \App\Models\MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS ? 'border-cyan-400 bg-cyan-50/50 ring-2 ring-cyan-200' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $targetType === \App\Models\MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS ? 'border-indigo-400 bg-indigo-50/50 ring-2 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50' }}">
                             <input
                                 type="radio"
                                 wire:model.live="targetType"
                                 value="{{ \App\Models\MandatoryAnnouncement::TARGET_ALL_SOCIAL_WORKERS }}"
-                                class="text-cyan-600 focus:ring-cyan-500"
+                                class="text-indigo-600 focus:ring-indigo-500"
                             />
                             <div>
-                                <span class="block text-xs font-extrabold text-slate-800 sm:text-sm">ارسال به تمامی مددکاران اجتماعی</span>
+                                <span class="block text-xs font-black text-slate-800 sm:text-sm">ارسال به تمامی مددکاران اجتماعی</span>
                                 <span class="text-[10px] text-slate-500 sm:text-[11px]">تمامی مددکاران دارای دسترسی پنل این پیام را دریافت می‌کنند</span>
                             </div>
                         </label>
 
-                        <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $targetType === \App\Models\MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS ? 'border-cyan-400 bg-cyan-50/50 ring-2 ring-cyan-200' : 'border-slate-200 hover:bg-slate-50' }}">
+                        <label class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition sm:p-3.5 {{ $targetType === \App\Models\MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS ? 'border-indigo-400 bg-indigo-50/50 ring-2 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50' }}">
                             <input
                                 type="radio"
                                 wire:model.live="targetType"
                                 value="{{ \App\Models\MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS }}"
-                                class="text-cyan-600 focus:ring-cyan-500"
+                                class="text-indigo-600 focus:ring-indigo-500"
                             />
                             <div>
-                                <span class="block text-xs font-extrabold text-slate-800 sm:text-sm">انتخاب مددکاران خاص</span>
+                                <span class="block text-xs font-black text-slate-800 sm:text-sm">انتخاب مددکاران خاص</span>
                                 <span class="text-[10px] text-slate-500 sm:text-[11px]">فقط مددکاران انتخابی موظف به مشاهده و تایید خواهند بود</span>
                             </div>
                         </label>
@@ -445,11 +467,11 @@
 
                     {{-- پنل انتخاب مددکاران خاص --}}
                     @if ($targetType === \App\Models\MandatoryAnnouncement::TARGET_SPECIFIC_SOCIAL_WORKERS)
-                        <div class="mt-3 rounded-xl border border-cyan-200 bg-cyan-50/30 p-3 sm:mt-4 sm:rounded-2xl sm:p-4">
+                        <div class="mt-3 rounded-xl border border-indigo-200 bg-indigo-50/30 p-3 sm:mt-4 sm:rounded-2xl sm:p-4">
                             <div class="mb-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-slate-700 sm:text-sm">مددکاران مدنظر را انتخاب کنید:</span>
-                                    <span class="rounded-full bg-cyan-100 px-2 py-0.5 text-[11px] font-extrabold text-cyan-800 sm:text-xs">
+                                    <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-black text-indigo-800 sm:text-xs">
                                         {{ count($selectedSocialWorkerIds) }} نفر انتخاب شده
                                     </span>
                                 </div>
@@ -457,7 +479,7 @@
                                     <button
                                         type="button"
                                         wire:click="selectAllSocialWorkers"
-                                        class="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-cyan-700 shadow-sm border border-cyan-200 hover:bg-cyan-50 active:bg-cyan-100"
+                                        class="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-indigo-700 shadow-sm border border-indigo-200 hover:bg-indigo-50 active:bg-indigo-100"
                                     >
                                         انتخاب همه
                                     </button>
@@ -471,13 +493,14 @@
                                 </div>
                             </div>
 
-                            <div class="mb-2.5">
+                            <div class="mb-2.5 relative">
                                 <input
                                     type="text"
                                     wire:model.live.debounce.250ms="workerSearch"
                                     placeholder="جستجوی نام یا کد مددکار..."
-                                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-cyan-500 sm:text-sm"
+                                    class="w-full rounded-xl border border-slate-300 bg-white py-2 pl-3 pr-8 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-indigo-500 sm:text-sm"
                                 />
+                                <i class="bi bi-search absolute right-2.5 top-2.5 text-xs text-slate-400"></i>
                             </div>
 
                             <div class="max-h-52 overflow-y-auto space-y-1 rounded-xl border border-slate-200 bg-white p-2 sm:max-h-60 sm:space-y-1.5 sm:p-3">
@@ -485,14 +508,14 @@
                                     @php
                                         $isSelected = in_array($worker->id, $selectedSocialWorkerIds, true);
                                     @endphp
-                                    <label class="flex cursor-pointer items-center justify-between rounded-lg p-2 transition {{ $isSelected ? 'bg-cyan-50 text-cyan-900 font-bold' : 'hover:bg-slate-50 text-slate-700' }}">
+                                    <label class="flex cursor-pointer items-center justify-between rounded-lg p-2 transition {{ $isSelected ? 'bg-indigo-50 text-indigo-950 font-bold' : 'hover:bg-slate-50 text-slate-700' }}">
                                         <div class="flex items-center gap-2">
                                             <input
                                                 type="checkbox"
                                                 value="{{ $worker->id }}"
                                                 wire:click="toggleSocialWorkerSelection({{ $worker->id }})"
                                                 @checked($isSelected)
-                                                class="rounded text-cyan-600 focus:ring-cyan-500"
+                                                class="rounded text-indigo-600 focus:ring-indigo-500"
                                             />
                                             <span class="text-xs sm:text-sm">{{ $worker->first_name }} {{ $worker->last_name }}</span>
                                             <span class="text-[10px] text-slate-400 sm:text-[11px]">کد: {{ $worker->worker_code ?? '—' }}</span>
@@ -511,16 +534,16 @@
                 </div>
 
                 {{-- تنظیمات مسدودسازی و شمارشگر مطالعه --}}
-                <div class="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3 sm:grid-cols-2 sm:gap-4 sm:rounded-2xl sm:p-4">
+                <div class="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4">
                     <div>
                         <label class="flex cursor-pointer items-start gap-2.5">
                             <input
                                 type="checkbox"
                                 wire:model="isBlocking"
-                                class="mt-0.5 rounded text-cyan-600 focus:ring-cyan-500"
+                                class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500"
                             />
                             <div>
-                                <span class="block text-xs font-extrabold text-slate-800 sm:text-sm">مسدودسازی پنل مددکار تا تایید کامل</span>
+                                <span class="block text-xs font-black text-slate-800 sm:text-sm">مسدودسازی پنل مددکار تا تایید کامل</span>
                                 <span class="text-[10px] text-slate-500 leading-relaxed block mt-0.5 sm:text-[11px]">
                                     در صورت فعال بودن، تا زمانی که مددکار دکمه «مشاهده و تایید» را نزند، قادر به انجام هیچ عملی در پنل نخواهد بود.
                                 </span>
@@ -541,11 +564,11 @@
                                 wire:model="minReadingSeconds"
                                 min="0"
                                 max="300"
-                                class="w-24 rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold text-slate-800 outline-none transition focus:border-cyan-500 sm:w-28 sm:py-2 sm:text-sm"
+                                class="w-24 rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold text-slate-800 outline-none transition focus:border-indigo-500 sm:w-28 sm:py-2 sm:text-sm"
                             />
-                            <span class="text-xs text-slate-500">ثانیه</span>
+                            <span class="text-xs font-bold text-slate-500">ثانیه</span>
 
-                            <div class="flex items-center gap-1 mr-1">
+                            <div class="flex items-center gap-1">
                                 <button type="button" wire:click="$set('minReadingSeconds', 0)" class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50">0</button>
                                 <button type="button" wire:click="$set('minReadingSeconds', 5)" class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50">5 ثانیه</button>
                                 <button type="button" wire:click="$set('minReadingSeconds', 10)" class="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50">10 ثانیه</button>
@@ -560,7 +583,7 @@
 
                 {{-- گزینه الزام به تایید مجدد در صورت ویرایش --}}
                 @if ($editingAnnouncementId)
-                    <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-3 sm:rounded-2xl sm:p-4">
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 sm:p-4">
                         <label class="flex cursor-pointer items-start gap-2.5">
                             <input
                                 type="checkbox"
@@ -568,7 +591,7 @@
                                 class="mt-0.5 rounded text-amber-600 focus:ring-amber-500"
                             />
                             <div>
-                                <span class="block text-xs font-extrabold text-amber-900 sm:text-sm">
+                                <span class="block text-xs font-black text-amber-900 sm:text-sm">
                                     الزام به تایید مجدد برای مددکارانی که قبلاً تایید کرده‌اند
                                 </span>
                                 <span class="text-[10px] text-amber-700 leading-relaxed block mt-0.5 sm:text-[11px]">
@@ -579,7 +602,7 @@
                     </div>
                 @endif
 
-                {{-- دکمه‌های فرم ریسپانسیو و لمسی --}}
+                {{-- دکمه‌های فرم --}}
                 <div class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:pt-4">
                     <button
                         type="button"
@@ -592,15 +615,18 @@
                     <button
                         type="submit"
                         wire:loading.attr="disabled"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl {{ $editingAnnouncementId ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200/50' : 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-200/50' }} px-5 py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 disabled:opacity-50 sm:w-auto sm:px-6 sm:text-sm"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl {{ $editingAnnouncementId ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200/50' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200/50' }} px-5 py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 disabled:opacity-50 sm:w-auto sm:px-6 sm:text-sm"
                     >
                         <span wire:loading.remove>
-                            <i class="fa {{ $editingAnnouncementId ? 'fa-check' : 'fa-paper-plane' }} ml-1"></i>
-                            {{ $editingAnnouncementId ? 'ذخیره تغییرات پیام' : 'ارسال و ابلاغ پیام' }}
+                            <i class="bi {{ $editingAnnouncementId ? 'bi-check-lg' : 'bi-send-fill' }}"></i>
+                            <span>{{ $editingAnnouncementId ? 'ذخیره تغییرات پیام' : 'ارسال و ابلاغ پیام' }}</span>
                         </span>
-                        <span wire:loading class="inline-flex items-center gap-1.5">
-                            <i class="fa fa-spinner fa-spin"></i>
-                            {{ $editingAnnouncementId ? 'در حال ذخیره تغییرات...' : 'در حال ثبت و ارسال...' }}
+                        <span wire:loading class="inline-flex items-center gap-2">
+                            <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                            </svg>
+                            <span>{{ $editingAnnouncementId ? 'در حال ذخیره تغییرات...' : 'در حال ثبت و ارسال...' }}</span>
                         </span>
                     </button>
                 </div>
@@ -608,30 +634,42 @@
         </div>
     @endif
 
-    {{-- مودال رهگیری و وضعیت مشاهده مخاطبان (بهینه و ریسپانسیو موبایل) --}}
+    {{-- مودال رهگیری و وضعیت مشاهده مخاطبان (بهینه و ریسپانسیو موبایل با کلید Esc و قفل اسکرول) --}}
     @if ($showAuditModal && $auditAnnouncement)
-        <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div
+            x-data="{
+                init() {
+                    document.body.style.overflow = 'hidden';
+                },
+                destroy() {
+                    document.body.style.overflow = '';
+                }
+            }"
+            @keydown.escape.window="$wire.closeAuditModal()"
+            class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
             {{-- بک‌دراپ تاریک --}}
             <div
                 wire:click="closeAuditModal"
                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             ></div>
 
-            {{-- کانتینر مودال شبیه به BottomSheet در موبایل و کارت در دسکتاپ --}}
-            <div class="relative z-10 w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+            {{-- کانتینر دیالوگ مودال --}}
+            <div class="relative z-10 w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-3xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
                 {{-- هدر مودال --}}
-                <div class="border-b border-slate-100 bg-slate-50/70 p-3.5 sm:p-5 flex items-start justify-between gap-3">
+                <div class="border-b border-slate-100 bg-slate-50/80 p-4 sm:p-5 flex items-start justify-between gap-3">
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-bold {{ $auditAnnouncement->priorityBadgeClasses() }}">
-                                {{ $auditAnnouncement->priorityLabel() }}
+                            <span class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-black {{ $auditAnnouncement->priorityBadgeClasses() }}">
+                                <i class="bi {{ $auditAnnouncement->priorityIcon() }}"></i>
+                                <span>{{ $auditAnnouncement->priorityLabel() }}</span>
                             </span>
-                            <h3 class="text-sm font-extrabold text-slate-800 sm:text-lg">
+                            <h3 class="text-sm font-black text-slate-800 sm:text-lg">
                                 گزارش و ردپای تایید پیام
                             </h3>
                         </div>
                         <p class="mt-1 text-xs text-slate-500 font-bold line-clamp-1">
-                            پیام: <span class="text-slate-700">{{ $auditAnnouncement->title }}</span>
+                            پیام: <span class="text-slate-800 font-black">{{ $auditAnnouncement->title }}</span>
                         </p>
                     </div>
 
@@ -639,58 +677,59 @@
                         type="button"
                         wire:click="closeAuditModal"
                         class="rounded-xl border border-slate-200 p-1.5 text-slate-400 hover:bg-white hover:text-slate-600 transition sm:p-2"
+                        title="بستن (Esc)"
                     >
-                        <i class="fa fa-times text-base sm:text-lg"></i>
+                        <i class="bi bi-x-lg text-base"></i>
                     </button>
                 </div>
 
-                {{-- خلاصه وضعیت آماری --}}
-                <div class="grid grid-cols-3 border-b border-slate-100 bg-white text-center divide-x divide-x-reverse divide-slate-100 p-2.5 sm:p-3">
+                {{-- خلاصه وضعیت آماری مدرن --}}
+                <div class="grid grid-cols-3 border-b border-slate-100 bg-white text-center divide-x divide-x-reverse divide-slate-100 p-3 sm:p-4">
                     <div>
                         <span class="block text-[11px] sm:text-xs text-slate-500 font-bold">کل مخاطبان</span>
-                        <span class="text-sm sm:text-base font-extrabold text-slate-800">{{ $auditAnnouncement->recipients_count }}</span>
+                        <span class="text-base sm:text-xl font-black text-slate-800">{{ $auditAnnouncement->recipients_count }}</span>
                     </div>
                     <div>
                         <span class="block text-[11px] sm:text-xs text-emerald-600 font-bold">تایید کرده‌اند</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-700">{{ $auditAnnouncement->read_recipients_count }}</span>
+                        <span class="text-base sm:text-xl font-black text-emerald-700">{{ $auditAnnouncement->read_recipients_count }}</span>
                     </div>
                     <div>
                         <span class="block text-[11px] sm:text-xs text-amber-600 font-bold">در انتظار مشاهده</span>
-                        <span class="text-sm sm:text-base font-extrabold text-amber-700">{{ $auditAnnouncement->recipients_count - $auditAnnouncement->read_recipients_count }}</span>
+                        <span class="text-base sm:text-xl font-black text-amber-700">{{ $auditAnnouncement->recipients_count - $auditAnnouncement->read_recipients_count }}</span>
                     </div>
                 </div>
 
                 {{-- فیلترهای درون مودال --}}
-                <div class="flex flex-col gap-2 border-b border-slate-100 bg-slate-50/50 p-2.5 sm:p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-2 border-b border-slate-100 bg-slate-50/50 p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="relative w-full sm:max-w-xs">
                         <input
                             type="text"
                             wire:model.live.debounce.250ms="auditSearch"
                             placeholder="جستجوی مددکار..."
-                            class="w-full rounded-xl border border-slate-300 bg-white py-1.5 pl-3 pr-8 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-cyan-500 sm:py-2 sm:text-sm"
+                            class="w-full rounded-xl border border-slate-300 bg-white py-1.5 pl-3 pr-8 text-xs text-slate-800 placeholder-slate-400 outline-none transition focus:border-indigo-500 sm:py-2 sm:text-sm"
                         />
-                        <i class="fa fa-search absolute right-3 top-2.5 text-xs text-slate-400 sm:top-3"></i>
+                        <i class="bi bi-search absolute right-3 top-2 text-xs text-slate-400 sm:top-2.5"></i>
                     </div>
 
                     <div class="flex items-center gap-1.5 self-end sm:self-auto">
                         <button
                             type="button"
                             wire:click="$set('auditStatusFilter', 'all')"
-                            class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $auditStatusFilter === 'all' ? 'bg-cyan-600 text-white' : 'bg-white text-slate-600 border border-slate-200' }}"
+                            class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $auditStatusFilter === 'all' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' }}"
                         >
                             همه
                         </button>
                         <button
                             type="button"
                             wire:click="$set('auditStatusFilter', 'read')"
-                            class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $auditStatusFilter === 'read' ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-700 border border-emerald-200' }}"
+                            class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $auditStatusFilter === 'read' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50' }}"
                         >
                             تایید شده
                         </button>
                         <button
                             type="button"
                             wire:click="$set('auditStatusFilter', 'unread')"
-                            class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $auditStatusFilter === 'unread' ? 'bg-amber-600 text-white' : 'bg-white text-amber-700 border border-amber-200' }}"
+                            class="rounded-lg px-2.5 py-1 text-xs font-bold transition {{ $auditStatusFilter === 'unread' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-amber-700 border border-amber-200 hover:bg-amber-50' }}"
                         >
                             در انتظار
                         </button>
@@ -698,21 +737,21 @@
                 </div>
 
                 {{-- لیست ردپای گیرندگان --}}
-                <div class="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-2">
+                <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
                     @forelse ($auditRecipients as $recipient)
                         @php
                             $worker = $recipient->socialWorker;
                             $user = $recipient->user;
                             $hasRead = !is_null($recipient->read_at);
                         @endphp
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border {{ $hasRead ? 'border-emerald-100 bg-emerald-50/20' : 'border-amber-100 bg-amber-50/20' }} p-2.5 sm:p-3 transition">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border {{ $hasRead ? 'border-emerald-100 bg-emerald-50/20' : 'border-amber-100 bg-amber-50/20' }} p-3 transition">
                             <div class="flex items-center gap-2.5">
-                                <div class="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl {{ $hasRead ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
-                                    <i class="fa {{ $hasRead ? 'fa-check' : 'fa-clock-o' }} text-xs sm:text-sm"></i>
+                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $hasRead ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                    <i class="bi {{ $hasRead ? 'bi-check-lg' : 'bi-hourglass-split' }} text-base"></i>
                                 </div>
                                 <div>
-                                    <div class="flex items-center gap-1.5 sm:gap-2">
-                                        <span class="text-xs font-extrabold text-slate-800 sm:text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-black text-slate-800 sm:text-sm">
                                             @if($worker)
                                                 {{ $worker->first_name }} {{ $worker->last_name }}
                                             @else
@@ -720,7 +759,7 @@
                                             @endif
                                         </span>
                                         @if($worker?->worker_code)
-                                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-slate-600">
+                                            <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
                                                 کد: {{ $worker->worker_code }}
                                             </span>
                                         @endif
@@ -733,34 +772,34 @@
 
                             <div class="text-right sm:text-left self-end sm:self-center">
                                 @if ($hasRead)
-                                    <span class="inline-flex items-center gap-1 text-[11px] sm:text-xs font-extrabold text-emerald-700">
-                                        <i class="fa fa-calendar-check text-emerald-600"></i>
+                                    <span class="inline-flex items-center gap-1 text-[11px] sm:text-xs font-black text-emerald-700">
+                                        <i class="bi bi-calendar-check text-emerald-600"></i>
                                         تایید در: {{ $this->formatJalaliDate($recipient->read_at, 'Y/m/d - H:i:s') }}
                                     </span>
-                                    <div class="text-[9px] sm:text-[10px] text-slate-500 font-medium mt-0.5">
-                                        نشانی شبکه: <span dir="ltr" class="font-mono">{{ $recipient->ip_address ?? '—' }}</span>
+                                    <div class="text-[10px] text-slate-500 font-mono mt-0.5" dir="ltr">
+                                        IP: {{ $recipient->ip_address ?? '—' }}
                                     </div>
                                 @else
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[11px] sm:text-xs font-bold text-amber-800">
-                                        <i class="fa fa-hourglass-half"></i>
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-800">
+                                        <i class="bi bi-hourglass-split"></i>
                                         در انتظار مشاهده و تایید
                                     </span>
                                 @endif
                             </div>
                         </div>
                     @empty
-                        <div class="py-6 text-center text-xs text-slate-400 sm:py-8">
+                        <div class="py-8 text-center text-xs text-slate-400">
                             موردی در لیست گیرندگان این پیام یافت نشد.
                         </div>
                     @endforelse
                 </div>
 
                 {{-- فوتر مودال --}}
-                <div class="border-t border-slate-100 bg-slate-50 p-2.5 sm:p-3 sm:px-5 flex items-center justify-end">
+                <div class="border-t border-slate-100 bg-slate-50 p-3 sm:px-5 flex items-center justify-end">
                     <button
                         type="button"
                         wire:click="closeAuditModal"
-                        class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition sm:text-sm text-center"
+                        class="w-full sm:w-auto rounded-xl border border-slate-200 bg-white px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition sm:text-sm text-center"
                     >
                         بستن
                     </button>
