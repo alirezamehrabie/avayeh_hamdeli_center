@@ -35,9 +35,9 @@
                 </div>
                 <p class="mt-0.5 text-[11px] font-medium text-slate-500 truncate">
                     @if($existingWorkersCount > 0)
-                        مجموع تخصیص: <span class="font-bold tabular-nums text-slate-700">{{ number_format($totalExistingAllocated, 2) }}</span>
+                        مجموع تخصیص: <span class="font-bold tabular-nums text-slate-700" dir="ltr">{{ number_format($totalExistingAllocated, 2) }}</span>
                         @if($totalExistingDelivered > 0)
-                            · تحویل‌شده: <span class="font-bold tabular-nums text-emerald-600">{{ number_format($totalExistingDelivered, 2) }}</span>
+                            · تحویل‌شده: <span class="font-bold tabular-nums text-emerald-600" dir="ltr">{{ number_format($totalExistingDelivered, 2) }}</span>
                         @endif
                     @else
                         تمام موجودی این خدمت آزاد است و هنوز به مددکاری سهمیه داده نشده است.
@@ -82,7 +82,7 @@
                                     </div>
                                     <p class="mt-0.5 text-[10px] font-semibold text-slate-400">کد: {{ $item['worker_code'] }} · {{ $item['district'] }}</p>
                                 </div>
-                                <span class="rounded-lg bg-indigo-50 px-2 py-0.5 text-[11px] font-black text-indigo-700">
+                                <span class="rounded-lg bg-indigo-50 px-2 py-0.5 text-[11px] font-black text-indigo-700" dir="ltr">
                                     {{ number_format($item['total_allocated'], 2) }}
                                 </span>
                             </div>
@@ -94,7 +94,7 @@
                                         <span class="shrink-0 tabular-nums font-black" dir="ltr">
                                             {{ number_format($cat['allocated_quantity'], 2) }}
                                             @if($cat['delivered_quantity'] > 0)
-                                                <span class="text-[10px] font-semibold text-emerald-600">({{ number_format($cat['delivered_quantity'], 2) }} تحویل)</span>
+                                                <span class="text-[10px] font-semibold text-emerald-600">(<span dir="ltr" class="inline-block tabular-nums">{{ number_format($cat['delivered_quantity'], 2) }}</span> تحویل)</span>
                                             @endif
                                         </span>
                                     </div>

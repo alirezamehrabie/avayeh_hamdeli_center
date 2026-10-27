@@ -131,7 +131,7 @@ class PredefinedServiceAllocator
                 $rows = collect($group['allocations'] ?? [])
                     ->map(function ($quantity, $categoryId): array {
                         $qty = is_string($quantity)
-                            ? (float) str_replace(['٫', '،', '/'], '.', PersianText::normalizeDigits(trim($quantity)))
+                            ? (float) str_replace(['٫', '،', '/', ','], '.', PersianText::normalizeDigits(trim($quantity)))
                             : (float) $quantity;
 
                         return [

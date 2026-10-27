@@ -2753,6 +2753,16 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->call('selectPredefinedGroupWorker', 0, $worker->id)
             ->set('predefinedWorkerGroups.0.allocations.'.$categoryPack->id, '۹۹')
             ->assertHasErrors(['predefinedWorkerGroups.0.allocations.'.$categoryPack->id]);
+
+        // Comma decimal separator should be supported and normalized to decimal
+        $commaTest = Livewire::test(ServiceBatchCreator::class)
+            ->call('choosePredefinedMode')
+            ->set('selectedServiceId', $service->id)
+            ->call('selectPredefinedGroupWorker', 0, $worker->id)
+            ->set('predefinedWorkerGroups.0.allocations.'.$categoryKg->id, '۷,۲۵');
+
+        $this->assertSame(7.25, $commaTest->instance()->predefinedGroupAllocationForCategory(0, $categoryKg->id));
+        $commaTest->assertSeeHtml('dir="ltr"');
     }
 
     public function test_predefined_mode_does_not_prematurely_error_when_clearing_allocation_during_editing(): void

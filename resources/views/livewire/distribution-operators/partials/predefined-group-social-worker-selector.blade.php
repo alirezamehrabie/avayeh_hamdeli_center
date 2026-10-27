@@ -452,7 +452,7 @@
                                             </span>
                                         @else
                                             <span class="w-full rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700 ring-1 ring-indigo-200 sm:w-auto">
-                                                دارای سهمیه قبلی ({{ number_format($worker['existing_service_allocation']['total_quantity'], 2) }})
+                                                دارای سهمیه قبلی (<span dir="ltr" class="inline-block tabular-nums font-bold">{{ number_format($worker['existing_service_allocation']['total_quantity'], 2) }}</span>)
                                             </span>
                                         @endif
                                     @endif

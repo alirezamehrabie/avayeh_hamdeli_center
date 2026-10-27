@@ -120,13 +120,13 @@
                                             @if($previousAllocation > 0)
                                                 <span class="inline-flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 ring-1 ring-indigo-200">
                                                     <span>قبلی:</span>
-                                                    <span dir="ltr">{{ $formatCategoryQuantity($previousAllocation) }}</span>
+                                                    <span dir="ltr" class="tabular-nums font-bold">{{ $formatCategoryQuantity($previousAllocation) }}</span>
                                                 </span>
                                             @endif
                                             @if($deliveredQuantity > 0)
                                                 <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700 ring-1 ring-emerald-200">
                                                     <span>تحویل:</span>
-                                                    <span dir="ltr">{{ $formatCategoryQuantity($deliveredQuantity) }}</span>
+                                                    <span dir="ltr" class="tabular-nums font-bold">{{ $formatCategoryQuantity($deliveredQuantity) }}</span>
                                                 </span>
                                             @endif
                                         </div>
@@ -157,7 +157,7 @@
                                         let normalized = original
                                             .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
                                             .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-                                            .replace(/[٫،\/]/g, '.');
+                                            .replace(/[٫،\/,]/g, '.');
                                         @if($usesDecimalQuantity)
                                             normalized = normalized.replace(/[^0-9.]/g, '');
                                             const parts = normalized.split('.');
@@ -179,7 +179,7 @@
                                         }
                                     "
                                     class="min-w-0 rounded-lg border {{ $hasError ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-2.5 py-2 text-center text-sm font-black tabular-nums outline-none transition focus:ring-2"
-                                    placeholder="۰"
+                                    placeholder="0"
                                     aria-invalid="{{ $hasError ? 'true' : 'false' }}"
                                 >
                                 <button
@@ -206,9 +206,15 @@
                                 @if($isOverAllocated)
                                     <p class="text-[11px] font-bold text-rose-600">بیشتر از موجودی قابل تخصیص</p>
                                 @elseif($isBelowDelivered)
-                                    <p class="text-[11px] font-bold text-rose-600">کمتر از مقدار تحویل‌شده ({{ $formatCategoryQuantity($deliveredQuantity) }})</p>
+                                    <p class="text-[11px] font-bold text-rose-600">
+                                        کمتر از مقدار تحویل‌شده (<span dir="ltr" class="inline-block tabular-nums font-bold">{{ $formatCategoryQuantity($deliveredQuantity) }}</span>)
+                                    </p>
                                 @elseif($allocatedPreview > 0)
-                                    <p class="text-[11px] font-semibold text-slate-400">{{ $allocatedPreviewLabel }} از {{ $assignableQuantityLabel }}</p>
+                                    <p class="text-[11px] font-semibold text-slate-400">
+                                        <span dir="ltr" class="inline-block font-bold tabular-nums text-slate-600">{{ $allocatedPreviewLabel }}</span>
+                                        <span class="mx-0.5">از</span>
+                                        <span dir="ltr" class="inline-block font-bold tabular-nums text-slate-600">{{ $assignableQuantityLabel }}</span>
+                                    </p>
                                 @endif
 
                                 @error('predefinedWorkerGroups.' . $groupIndex . '.allocations.' . $category->id)

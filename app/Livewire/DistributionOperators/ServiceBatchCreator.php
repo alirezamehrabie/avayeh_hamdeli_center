@@ -1863,7 +1863,7 @@ class ServiceBatchCreator extends Component
         }
 
         $str = PersianText::normalizeDigits(trim((string) $value));
-        $str = str_replace(['٫', '،', '/'], '.', $str);
+        $str = str_replace(['٫', '،', '/', ','], '.', $str);
         $str = preg_replace('/[^0-9.]/', '', $str) ?? '';
 
         if (substr_count($str, '.') > 1) {
