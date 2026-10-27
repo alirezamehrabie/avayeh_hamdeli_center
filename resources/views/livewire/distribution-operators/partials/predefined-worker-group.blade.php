@@ -92,11 +92,13 @@
                             // Assignable for THIS worker: the shared pool minus what other
                             // worker groups have already claimed for the same category.
                             $assignableQuantity = $this->predefinedGroupAssignableForCategory((int) $groupIndex, (int) $category->id);
+                            $rawAllocation = $workerGroup['allocations'][(int) $category->id] ?? null;
+                            $hasEnteredValue = $rawAllocation !== null && $rawAllocation !== '';
                             $allocatedPreview = $this->predefinedGroupAllocationForCategory((int) $groupIndex, (int) $category->id);
                             $previousAllocation = (float) ($workerGroup['previous_allocations'][(int) $category->id] ?? 0);
                             $deliveredQuantity = (float) ($workerGroup['delivered_quantities'][(int) $category->id] ?? 0);
-                            $isOverAllocated = $allocatedPreview > $assignableQuantity;
-                            $isBelowDelivered = $deliveredQuantity > 0 && $allocatedPreview < $deliveredQuantity;
+                            $isOverAllocated = $hasEnteredValue && $allocatedPreview > $assignableQuantity;
+                            $isBelowDelivered = $hasEnteredValue && $deliveredQuantity > 0 && $allocatedPreview < $deliveredQuantity;
                             $hasError = $isOverAllocated || $isBelowDelivered;
                             $usesDecimalQuantity = in_array((string) $category->unit, ['kilogram', 'gram', 'kg', 'g'], true);
                             $formatCategoryQuantity = fn (float|int $quantity) => number_format((float) $quantity, $usesDecimalQuantity ? 2 : 0);
@@ -106,7 +108,10 @@
                             $quantityInputMode = $usesDecimalQuantity ? 'decimal' : 'numeric';
                             $categoryUnitLabel = $unitOptions[$category->unit] ?? $category->unit;
                         @endphp
-                        <div class="rounded-xl border {{ $hasError ? 'border-rose-200 bg-rose-50/70' : 'border-slate-200 bg-white' }} p-2.5 shadow-sm shadow-slate-900/[0.02]">
+                        <div
+                            wire:key="predefined-group-{{ $groupIndex }}-category-card-{{ $category->id }}"
+                            class="rounded-xl border {{ $hasError ? 'border-rose-200 bg-rose-50/70' : 'border-slate-200 bg-white' }} p-2.5 shadow-sm shadow-slate-900/[0.02] transition-colors duration-150"
+                        >
                             <div class="flex items-start justify-between gap-2">
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
@@ -136,13 +141,15 @@
                             <div class="mt-2 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
                                 <input
                                     type="text"
+                                    id="predefined-allocation-{{ $groupIndex }}-{{ $category->id }}"
+                                    wire:key="predefined-allocation-input-{{ $groupIndex }}-{{ $category->id }}"
                                     inputmode="{{ $quantityInputMode }}"
                                     dir="ltr"
                                     autocomplete="off"
                                     min="{{ $deliveredQuantity > 0 ? $deliveredQuantity : 0 }}"
                                     step="{{ $quantityInputStep }}"
                                     max="{{ $assignableQuantity }}"
-                                    wire:model.live.debounce.250ms="predefinedWorkerGroups.{{ $groupIndex }}.allocations.{{ $category->id }}"
+                                    wire:model.live.debounce.750ms="predefinedWorkerGroups.{{ $groupIndex }}.allocations.{{ $category->id }}"
                                     @keydown.enter.prevent
                                     x-on:input="
                                         const el = $event.target;
@@ -177,6 +184,7 @@
                                 >
                                 <button
                                     type="button"
+                                    wire:key="predefined-max-btn-{{ $groupIndex }}-{{ $category->id }}"
                                     wire:click="useMaxPredefinedGroupAllocation({{ $groupIndex }}, {{ $category->id }})"
                                     @disabled($assignableQuantity <= 0)
                                     class="rounded-lg border border-cyan-100 bg-cyan-50 px-2 py-2 text-[11px] font-bold text-cyan-700 transition hover:bg-cyan-100 disabled:opacity-40"
@@ -185,6 +193,7 @@
                                 </button>
                                 <button
                                     type="button"
+                                    wire:key="predefined-clear-btn-{{ $groupIndex }}-{{ $category->id }}"
                                     wire:click="clearPredefinedGroupAllocation({{ $groupIndex }}, {{ $category->id }})"
                                     @disabled($allocatedPreview <= 0)
                                     class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-[11px] font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-40"
@@ -193,15 +202,19 @@
                                 </button>
                             </div>
 
-                            @if($isOverAllocated)
-                                <p class="mt-1.5 text-[11px] font-bold text-rose-600">بیشتر از موجودی قابل تخصیص</p>
-                            @elseif($isBelowDelivered)
-                                <p class="mt-1.5 text-[11px] font-bold text-rose-600">کمتر از مقدار تحویل‌شده ({{ $formatCategoryQuantity($deliveredQuantity) }})</p>
-                            @elseif($allocatedPreview > 0)
-                                <p class="mt-1.5 text-[11px] font-semibold text-slate-400">{{ $allocatedPreviewLabel }} از {{ $assignableQuantityLabel }}</p>
-                            @endif
+                            <div class="mt-1.5 min-h-[1.25rem]">
+                                @if($isOverAllocated)
+                                    <p class="text-[11px] font-bold text-rose-600">بیشتر از موجودی قابل تخصیص</p>
+                                @elseif($isBelowDelivered)
+                                    <p class="text-[11px] font-bold text-rose-600">کمتر از مقدار تحویل‌شده ({{ $formatCategoryQuantity($deliveredQuantity) }})</p>
+                                @elseif($allocatedPreview > 0)
+                                    <p class="text-[11px] font-semibold text-slate-400">{{ $allocatedPreviewLabel }} از {{ $assignableQuantityLabel }}</p>
+                                @endif
 
-                            @error('predefinedWorkerGroups.' . $groupIndex . '.allocations.' . $category->id) <p data-validation-error class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
+                                @error('predefinedWorkerGroups.' . $groupIndex . '.allocations.' . $category->id)
+                                    <p data-validation-error class="text-[11px] text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                     @endforeach
                 </div>

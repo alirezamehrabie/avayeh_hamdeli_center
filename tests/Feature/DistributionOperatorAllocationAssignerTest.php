@@ -2754,4 +2754,80 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('predefinedWorkerGroups.0.allocations.'.$categoryPack->id, '۹۹')
             ->assertHasErrors(['predefinedWorkerGroups.0.allocations.'.$categoryPack->id]);
     }
+
+    public function test_predefined_mode_does_not_prematurely_error_when_clearing_allocation_during_editing(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 773,
+            'first_name' => 'Smooth',
+            'last_name' => 'Typing',
+            'is_active' => true,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Service With History',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Service With History',
+            'service_type' => 'individual',
+            'total_quantity' => 20,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'created_by' => $manager->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Oil',
+            'quantity' => 20,
+            'unit' => 'bottle',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 10,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'national_id' => '1234567890',
+            'full_name' => 'Beneficiary Two',
+            'delivered_quantity' => 5,
+            'value_per_unit_snapshot' => 100,
+            'delivered_total_value' => 500,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        // When loading the worker, then backspacing/clearing the input to retype,
+        // it should NOT prematurely flash an error for being less than delivered while empty.
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->call('loadPredefinedExistingWorkerIntoForm', $worker->id)
+            ->set('predefinedWorkerGroups.0.allocations.'.$category->id, '')
+            ->assertHasNoErrors(['predefinedWorkerGroups.0.allocations.'.$category->id])
+            ->set('predefinedWorkerGroups.0.allocations.'.$category->id, '8')
+            ->assertHasNoErrors(['predefinedWorkerGroups.0.allocations.'.$category->id]);
+    }
 }

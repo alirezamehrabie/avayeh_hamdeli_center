@@ -2347,6 +2347,14 @@ class ServiceBatchCreator extends Component
     protected function validatePredefinedGroupAllocationField(int $index, int $categoryId): void
     {
         $field = "predefinedWorkerGroups.{$index}.allocations.{$categoryId}";
+        $raw = $this->predefinedWorkerGroups[$index]['allocations'][$categoryId] ?? null;
+
+        if ($raw === null || $raw === '') {
+            $this->resetValidation($field);
+
+            return;
+        }
+
         $quantity = $this->predefinedGroupAllocationForCategory($index, $categoryId);
         $assignableQuantity = $this->predefinedGroupAssignableForCategory($index, $categoryId);
 
