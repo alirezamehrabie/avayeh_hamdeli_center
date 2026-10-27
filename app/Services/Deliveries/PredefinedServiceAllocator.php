@@ -2,6 +2,7 @@
 
 namespace App\Services\Deliveries;
 
+use App\Helpers\PersianText;
 use App\Models\Service;
 use App\Models\ServiceWorkerAllocation;
 use Illuminate\Support\Collection;
@@ -128,10 +129,16 @@ class PredefinedServiceAllocator
             ->map(function (array $group, int $groupIndex): array {
                 $workerId = (int) ($group['social_worker_id'] ?? 0);
                 $rows = collect($group['allocations'] ?? [])
-                    ->map(fn ($quantity, $categoryId): array => [
-                        'category_id' => (int) $categoryId,
-                        'quantity' => (float) $quantity,
-                    ])
+                    ->map(function ($quantity, $categoryId): array {
+                        $qty = is_string($quantity)
+                            ? (float) str_replace(['٫', '،', '/'], '.', PersianText::normalizeDigits(trim($quantity)))
+                            : (float) $quantity;
+
+                        return [
+                            'category_id' => (int) $categoryId,
+                            'quantity' => $qty,
+                        ];
+                    })
                     ->filter(fn (array $row): bool => $row['quantity'] > 0)
                     ->values();
 

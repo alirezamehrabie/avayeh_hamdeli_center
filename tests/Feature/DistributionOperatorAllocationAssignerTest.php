@@ -2656,4 +2656,102 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->call('saveBatch')
             ->assertHasErrors(['predefinedWorkerGroups.0.allocations.'.$category->id]);
     }
+
+    public function test_predefined_mode_supports_persian_and_arabic_digits_and_decimals_in_allocations(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 905,
+            'first_name' => 'مددکار',
+            'last_name' => 'فارسی',
+            'is_active' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'پویش ارقام فارسی',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'پویش ارقام فارسی',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'description' => null,
+            'total_quantity' => 50,
+            'total_service_value' => 0,
+            'distribution_start_date' => '2026-06-20',
+            'distribution_end_date' => '2026-06-20',
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $categoryPack = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'بسته معیشتی',
+            'quantity' => 20,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $categoryKg = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'گوشت',
+            'quantity' => 30,
+            'unit' => 'kg',
+            'value' => 0,
+            'sort_id' => 2,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        // Enter Persian digits for pack ('۴') and Persian decimal digits for kg ('۱۲٫۵')
+        $component = Livewire::test(ServiceBatchCreator::class)
+            ->call('choosePredefinedMode')
+            ->set('selectedServiceId', $service->id)
+            ->call('selectPredefinedGroupWorker', 0, $worker->id)
+            ->set('predefinedWorkerGroups.0.allocations.'.$categoryPack->id, '۴')
+            ->set('predefinedWorkerGroups.0.allocations.'.$categoryKg->id, '۱۲٫۵');
+
+        $this->assertTrue($component->instance()->hasPositivePredefinedAllocation());
+        $this->assertSame(4.0, $component->instance()->predefinedGroupAllocationForCategory(0, $categoryPack->id));
+        $this->assertSame(12.5, $component->instance()->predefinedGroupAllocationForCategory(0, $categoryKg->id));
+
+        $component->call('saveBatch')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('distribution-operator.service-list'));
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $categoryPack->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 4.0,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $categoryKg->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 12.5,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        // Over-allocation with Persian digits should be caught
+        Livewire::test(ServiceBatchCreator::class)
+            ->call('choosePredefinedMode')
+            ->set('selectedServiceId', $service->id)
+            ->call('selectPredefinedGroupWorker', 0, $worker->id)
+            ->set('predefinedWorkerGroups.0.allocations.'.$categoryPack->id, '۹۹')
+            ->assertHasErrors(['predefinedWorkerGroups.0.allocations.'.$categoryPack->id]);
+    }
 }

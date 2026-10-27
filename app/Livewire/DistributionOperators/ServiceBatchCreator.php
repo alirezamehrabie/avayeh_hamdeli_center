@@ -4,6 +4,7 @@ namespace App\Livewire\DistributionOperators;
 
 use App\Data\Deliveries\MiscServiceEditData;
 use App\Helpers\Morilog\Jalalian;
+use App\Helpers\PersianText;
 use App\Livewire\DistributionOperators\Concerns\ConvertsJalaliDates;
 use App\Livewire\DistributionOperators\Concerns\FormatsServiceQuantities;
 use App\Models\Service;
@@ -312,6 +313,14 @@ class ServiceBatchCreator extends Component
             $categoryId = (int) $segments[2];
 
             if ($categoryId > 0) {
+                if (isset($this->predefinedWorkerGroups[$groupIndex]['allocations'][$categoryId])) {
+                    $raw = $this->predefinedWorkerGroups[$groupIndex]['allocations'][$categoryId];
+                    $normalized = $this->normalizeAllocationQuantity($raw);
+                    if ($raw !== $normalized) {
+                        $this->predefinedWorkerGroups[$groupIndex]['allocations'][$categoryId] = $normalized;
+                    }
+                }
+
                 $this->validatePredefinedGroupAllocationField($groupIndex, $categoryId);
             }
         }
@@ -935,6 +944,7 @@ class ServiceBatchCreator extends Component
         } elseif ($this->mode === self::MODE_MISC) {
             $this->validate($this->miscRules(), [], $this->validationAttributes());
         } else {
+            $this->normalizePredefinedWorkerGroupAllocations();
             $this->validate($this->predefinedRules(), [], $this->validationAttributes());
             $this->validatePredefinedAllocationRowsForConfirmation();
         }
@@ -1013,6 +1023,7 @@ class ServiceBatchCreator extends Component
 
     protected function savePredefinedAllocation()
     {
+        $this->normalizePredefinedWorkerGroupAllocations();
         $validated = $this->validate($this->predefinedRules(), [], $this->validationAttributes());
         $this->validateDistinctPredefinedWorkerGroups();
         $service = $this->resolvePredefinedService((int) $validated['selectedServiceId']);
@@ -1046,7 +1057,7 @@ class ServiceBatchCreator extends Component
             $rows = collect($group['allocations'] ?? [])
                 ->map(fn ($quantity, $categoryId): array => [
                     'category_id' => (int) $categoryId,
-                    'quantity' => (float) $quantity,
+                    'quantity' => (float) $this->normalizeAllocationQuantity($quantity),
                 ])
                 ->filter(fn (array $row): bool => $row['quantity'] > 0)
                 ->values();
@@ -1845,9 +1856,47 @@ class ServiceBatchCreator extends Component
         return $this->selectedPredefinedService?->categories?->values() ?? collect();
     }
 
+    public function normalizeAllocationQuantity(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $str = PersianText::normalizeDigits(trim((string) $value));
+        $str = str_replace(['٫', '،', '/'], '.', $str);
+        $str = preg_replace('/[^0-9.]/', '', $str) ?? '';
+
+        if (substr_count($str, '.') > 1) {
+            $parts = explode('.', $str);
+            $str = array_shift($parts).'.'.implode('', $parts);
+        }
+
+        return $str;
+    }
+
+    protected function normalizePredefinedWorkerGroupAllocations(): void
+    {
+        foreach ($this->predefinedWorkerGroups as $groupIndex => $group) {
+            if (! isset($group['allocations']) || ! is_array($group['allocations'])) {
+                continue;
+            }
+
+            foreach ($group['allocations'] as $categoryId => $val) {
+                if ($val !== null && $val !== '') {
+                    $this->predefinedWorkerGroups[$groupIndex]['allocations'][$categoryId] = $this->normalizeAllocationQuantity($val);
+                }
+            }
+        }
+    }
+
     public function predefinedGroupAllocationForCategory(int $index, int $categoryId): float
     {
-        return max(0, (float) ($this->predefinedWorkerGroups[$index]['allocations'][$categoryId] ?? 0));
+        $raw = $this->predefinedWorkerGroups[$index]['allocations'][$categoryId] ?? 0;
+        if (is_string($raw) && $raw !== '') {
+            $raw = $this->normalizeAllocationQuantity($raw);
+        }
+
+        return max(0, (float) $raw);
     }
 
     /**
@@ -1872,7 +1921,12 @@ class ServiceBatchCreator extends Component
                 continue;
             }
 
-            $total += max(0, (float) ($group['allocations'][$categoryId] ?? 0));
+            $raw = $group['allocations'][$categoryId] ?? 0;
+            if (is_string($raw) && $raw !== '') {
+                $raw = $this->normalizeAllocationQuantity($raw);
+            }
+
+            $total += max(0, (float) $raw);
         }
 
         return $total;
@@ -1927,7 +1981,7 @@ class ServiceBatchCreator extends Component
     {
         return collect($this->predefinedWorkerGroups)
             ->contains(fn (array $group): bool => collect($group['allocations'] ?? [])
-                ->contains(fn ($quantity): bool => (float) $quantity > 0));
+                ->contains(fn ($quantity): bool => (float) $this->normalizeAllocationQuantity($quantity) > 0));
     }
 
     /**
@@ -1946,7 +2000,7 @@ class ServiceBatchCreator extends Component
             }
 
             $hasPositive = collect($group['allocations'] ?? [])
-                ->contains(fn ($quantity): bool => (float) $quantity > 0);
+                ->contains(fn ($quantity): bool => (float) $this->normalizeAllocationQuantity($quantity) > 0);
 
             if (! $hasPositive) {
                 return false;
@@ -2225,7 +2279,7 @@ class ServiceBatchCreator extends Component
 
             $hasWorkerWithoutAllocation = collect($this->predefinedWorkerGroups)
                 ->contains(fn ($group): bool => (int) ($group['social_worker_id'] ?? 0) > 0
-                    && ! collect($group['allocations'] ?? [])->contains(fn ($quantity): bool => (float) $quantity > 0));
+                    && ! collect($group['allocations'] ?? [])->contains(fn ($quantity): bool => (float) $this->normalizeAllocationQuantity($quantity) > 0));
 
             if (! $this->hasPositivePredefinedAllocation() || $hasWorkerWithoutAllocation) {
                 $messages[] = 'برای هر مددکار حداقل یک دسته‌بندی مقدار تخصیص وارد کنید.';

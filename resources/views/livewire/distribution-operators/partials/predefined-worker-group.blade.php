@@ -135,14 +135,43 @@
 
                             <div class="mt-2 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputmode="{{ $quantityInputMode }}"
+                                    dir="ltr"
+                                    autocomplete="off"
                                     min="{{ $deliveredQuantity > 0 ? $deliveredQuantity : 0 }}"
                                     step="{{ $quantityInputStep }}"
                                     max="{{ $assignableQuantity }}"
                                     wire:model.live.debounce.250ms="predefinedWorkerGroups.{{ $groupIndex }}.allocations.{{ $category->id }}"
                                     @keydown.enter.prevent
-                                    inputmode="{{ $quantityInputMode }}"
-                                    class="min-w-0 rounded-lg border {{ $hasError ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-2.5 py-2 text-center text-sm font-black outline-none transition focus:ring-2"
+                                    x-on:input="
+                                        const el = $event.target;
+                                        const original = el.value;
+                                        let normalized = original
+                                            .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+                                            .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+                                            .replace(/[٫،\/]/g, '.');
+                                        @if($usesDecimalQuantity)
+                                            normalized = normalized.replace(/[^0-9.]/g, '');
+                                            const parts = normalized.split('.');
+                                            if (parts.length > 2) {
+                                                normalized = parts[0] + '.' + parts.slice(1).join('');
+                                            }
+                                        @else
+                                            normalized = normalized.replace(/[^0-9]/g, '');
+                                        @endif
+                                        if (original !== normalized) {
+                                            const pos = el.selectionStart;
+                                            el.value = normalized;
+                                            if (pos !== null) {
+                                                const diff = original.length - normalized.length;
+                                                const newPos = Math.max(0, pos - diff);
+                                                el.setSelectionRange(newPos, newPos);
+                                            }
+                                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                                        }
+                                    "
+                                    class="min-w-0 rounded-lg border {{ $hasError ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-2.5 py-2 text-center text-sm font-black tabular-nums outline-none transition focus:ring-2"
                                     placeholder="۰"
                                     aria-invalid="{{ $hasError ? 'true' : 'false' }}"
                                 >
