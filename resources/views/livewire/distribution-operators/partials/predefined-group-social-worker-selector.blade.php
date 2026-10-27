@@ -74,12 +74,16 @@
                 return Math.max(0, window.innerHeight - (this.viewportHeight + this.viewportOffsetTop));
             },
             get mobileSheetStyle() {
-                if (! this.isMobileSheet) {
-                    return '';
+                if (! this.open || ! this.isMobileSheet) {
+                    return {};
                 }
                 const maxHeight = Math.max(280, this.viewportHeight - 16);
                 const minHeight = Math.min(maxHeight, Math.max(240, this.viewportHeight * 0.45));
-                return `transform: translateY(-${this.keyboardInset}px); max-height: ${maxHeight}px; min-height: ${minHeight}px;`;
+                return {
+                    transform: `translateY(-${this.keyboardInset}px)`,
+                    maxHeight: `${maxHeight}px`,
+                    minHeight: `${minHeight}px`,
+                };
             },
             init() {
                 this.mediaQuery = window.matchMedia('(max-width: 639px)');
@@ -103,6 +107,7 @@
                 this.syncViewport();
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
+                this.$cleanup(() => this.destroy());
 
                 // When the first-worker section first appears (a service was just
                 // picked and no worker is chosen yet), gently bring it into view and
@@ -336,7 +341,7 @@
             x-transition:leave-start="translate-y-0 opacity-100"
             x-transition:leave-end="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
             @click.outside="closeSelector()"
-            :style="isMobileSheet ? mobileSheetStyle : ''"
+            :style="open && isMobileSheet ? mobileSheetStyle : {}"
             class="fixed inset-x-0 bottom-0 z-50 flex max-h-[86svh] min-h-[48svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] transition-[transform,max-height] duration-100 ease-out sm:absolute sm:inset-auto sm:mt-2 sm:min-h-0 sm:max-h-[30rem] sm:w-full sm:rounded-2xl sm:p-2 sm:shadow-xl sm:transition-none"
             dir="rtl"
             role="dialog"

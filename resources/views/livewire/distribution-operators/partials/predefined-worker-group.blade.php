@@ -140,6 +140,7 @@
                                     step="{{ $quantityInputStep }}"
                                     max="{{ $assignableQuantity }}"
                                     wire:model.live.debounce.250ms="predefinedWorkerGroups.{{ $groupIndex }}.allocations.{{ $category->id }}"
+                                    @keydown.enter.prevent
                                     inputmode="{{ $quantityInputMode }}"
                                     class="min-w-0 rounded-lg border {{ $hasError ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-2.5 py-2 text-center text-sm font-black outline-none transition focus:ring-2"
                                     placeholder="۰"

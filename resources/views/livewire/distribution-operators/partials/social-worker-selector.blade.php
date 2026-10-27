@@ -66,14 +66,18 @@
                 return Math.max(0, window.innerHeight - (this.viewportHeight + this.viewportOffsetTop));
             },
             get mobileSheetStyle() {
-                if (! this.keyboardAwareMobileSheet || ! this.isMobileSheet) {
-                    return '';
+                if (! this.open || ! this.keyboardAwareMobileSheet || ! this.isMobileSheet) {
+                    return {};
                 }
 
                 const maxHeight = Math.max(320, this.viewportHeight - 12);
                 const minHeight = Math.min(maxHeight, Math.max(280, this.viewportHeight * 0.48));
 
-                return `transform:translateY(-${this.keyboardInset}px);max-height:${maxHeight}px;min-height:${minHeight}px;`;
+                return {
+                    transform: `translateY(-${this.keyboardInset}px)`,
+                    maxHeight: `${maxHeight}px`,
+                    minHeight: `${minHeight}px`,
+                };
             },
             init() {
                 this.mediaQuery = window.matchMedia('(max-width: 639px)');
@@ -97,6 +101,7 @@
                 this.syncViewport();
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
+                this.$cleanup(() => this.destroy());
 
                 if (this.guideSelection) {
                     this.$nextTick(() => this.scrollIntoViewForGuidance());
@@ -303,7 +308,7 @@
             role="dialog"
             aria-modal="true"
             aria-label="انتخاب مددکار"
-            x-bind:style="mobileSheetStyle"
+            x-bind:style="open && isMobileSheet ? mobileSheetStyle : {}"
             style="display: none;"
         >
             <!-- Mobile drag handle pill -->

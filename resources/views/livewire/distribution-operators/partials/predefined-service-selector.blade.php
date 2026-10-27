@@ -17,6 +17,7 @@
             viewportHeight: window.innerHeight,
             viewportOffsetTop: 0,
             search: @entangle('serviceSearch').live,
+            openPredefinedServiceSelectorHandler: null,
             get isMobileSheet() {
                 return this.mediaQuery?.matches ?? window.matchMedia('(max-width: 639px)').matches;
             },
@@ -24,17 +25,21 @@
                 return Math.max(0, window.innerHeight - (this.viewportHeight + this.viewportOffsetTop));
             },
             get mobileSheetStyle() {
-                if (! this.isMobileSheet) {
-                    return '';
+                if (! this.open || ! this.isMobileSheet) {
+                    return {};
                 }
                 const maxHeight = Math.max(280, this.viewportHeight - 16);
-                return `transform: translateY(-${this.keyboardInset}px); max-height: ${maxHeight}px;`;
+                return {
+                    transform: `translateY(-${this.keyboardInset}px)`,
+                    maxHeight: `${maxHeight}px`,
+                };
             },
             init() {
                 this.mediaQuery = window.matchMedia('(max-width: 639px)');
                 this.popStateHandler = () => this.handleSelectorPopState();
                 this.mediaQueryHandler = () => this.syncPageScrollLock(this.open);
                 this.viewportSyncHandler = () => this.syncViewport();
+                this.openPredefinedServiceSelectorHandler = () => this.openSelector();
 
                 window.addEventListener('popstate', this.popStateHandler);
                 window.addEventListener('resize', this.viewportSyncHandler);
@@ -51,11 +56,10 @@
 
                 this.syncViewport();
 
-                window.addEventListener('open-predefined-service-selector', () => {
-                    this.openSelector();
-                });
+                window.addEventListener('open-predefined-service-selector', this.openPredefinedServiceSelectorHandler);
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
+                this.$cleanup(() => this.destroy());
             },
             destroy() {
                 if (this.popStateHandler) {
@@ -63,6 +67,9 @@
                 }
                 if (this.viewportSyncHandler) {
                     window.removeEventListener('resize', this.viewportSyncHandler);
+                }
+                if (this.openPredefinedServiceSelectorHandler) {
+                    window.removeEventListener('open-predefined-service-selector', this.openPredefinedServiceSelectorHandler);
                 }
                 if (this.mediaQueryHandler) {
                     if (this.mediaQuery?.removeEventListener) {
@@ -238,7 +245,7 @@
             x-transition:leave-start="translate-y-0 opacity-100"
             x-transition:leave-end="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
             @click.outside="closeSelector()"
-            :style="isMobileSheet ? mobileSheetStyle : ''"
+            :style="open && isMobileSheet ? mobileSheetStyle : {}"
             class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] transition-[transform,max-height] duration-100 ease-out sm:absolute sm:inset-auto sm:mt-2 sm:max-h-96 sm:w-full sm:rounded-2xl sm:p-2 sm:shadow-xl sm:transition-none"
             dir="rtl"
             role="dialog"
