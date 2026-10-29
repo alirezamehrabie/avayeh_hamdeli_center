@@ -7,9 +7,6 @@
         isSaving: false,
         beforeUnloadHandler: null,
         navigationGuardHandler: null,
-        reviewPanelHeight: 0,
-        reviewPanelResizeHandler: null,
-        reviewPanelResizeObserver: null,
         init() {
             if (window.Livewire) {
                 Livewire.hook('morph.updated', () => {
@@ -19,10 +16,6 @@
                     this.isSaving = false;
                     this.focusFirstValidationError();
                     this.scrollToMiscServiceTypeWhenReady();
-                    this.$nextTick(() => {
-                        this.syncReviewPanelHeight();
-                        this.observeReviewPanelHeight();
-                    });
                 });
             }
 
@@ -38,26 +31,10 @@
             };
 
             window.addEventListener('beforeunload', this.beforeUnloadHandler);
-
-            this.reviewPanelResizeHandler = () => this.syncReviewPanelHeight();
-            window.addEventListener('resize', this.reviewPanelResizeHandler);
-
-            this.$nextTick(() => {
-                this.syncReviewPanelHeight();
-                this.observeReviewPanelHeight();
-            });
         },
         destroy() {
             if (this.beforeUnloadHandler) {
                 window.removeEventListener('beforeunload', this.beforeUnloadHandler);
-            }
-
-            if (this.reviewPanelResizeHandler) {
-                window.removeEventListener('resize', this.reviewPanelResizeHandler);
-            }
-
-            if (this.reviewPanelResizeObserver) {
-                this.reviewPanelResizeObserver.disconnect();
             }
 
             if (window.distributionOperatorConfirmServiceEditNavigation === this.navigationGuardHandler) {
@@ -128,46 +105,6 @@
 
                 this.shouldFocusValidationError = false;
             });
-        },
-        usesFixedMobileReviewPanel() {
-            return window.innerWidth < 1024;
-        },
-        syncReviewPanelHeight() {
-            if (! this.usesFixedMobileReviewPanel()) {
-                this.reviewPanelHeight = 0;
-                return;
-            }
-
-            const reviewPanel = this.$refs.reviewPanel;
-
-            if (! reviewPanel) {
-                this.reviewPanelHeight = 0;
-                return;
-            }
-
-            this.reviewPanelHeight = Math.ceil(reviewPanel.getBoundingClientRect().height);
-        },
-        observeReviewPanelHeight() {
-            const reviewPanel = this.$refs.reviewPanel;
-
-            if (this.reviewPanelResizeObserver) {
-                this.reviewPanelResizeObserver.disconnect();
-                this.reviewPanelResizeObserver = null;
-            }
-
-            if (! reviewPanel || typeof ResizeObserver === 'undefined') {
-                return;
-            }
-
-            this.reviewPanelResizeObserver = new ResizeObserver(() => this.syncReviewPanelHeight());
-            this.reviewPanelResizeObserver.observe(reviewPanel);
-        },
-        reviewPanelSpacerStyle() {
-            if (! this.usesFixedMobileReviewPanel() || this.reviewPanelHeight === 0) {
-                return 'display:none;';
-            }
-
-            return `height: calc(${this.reviewPanelHeight}px + 0.75rem);`;
         },
     }"
     data-service-batch-creator-root
@@ -979,19 +916,12 @@
             $reviewGroups = $reviewSummary['groups'] ?? [];
             $reviewWorkerCount = count($reviewGroups);
 
-            // On mobile devices, keep the review and save action bar pinned to the
-            // bottom of the viewport so the operator has immediate thumb access and
-            // real-time completion feedback without scrolling to the end of a long form.
-            $reviewCardClasses = 'fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-20 ' .
-                ($reviewStepUnlocked
-                    ? 'border-emerald-300 bg-white/95 shadow-[0_-6px_24px_rgba(15,23,42,0.14)] backdrop-blur-md'
-                    : 'border-slate-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur-md') .
-                ' sm:left-6 sm:right-6 lg:static lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto lg:shadow-sm ' .
-                ($reviewStepUnlocked ? 'lg:border-emerald-200 lg:bg-white' : 'lg:border-slate-200 lg:bg-slate-50');
+            $reviewCardClasses = $reviewStepUnlocked
+                ? 'border-emerald-200 bg-white shadow-sm'
+                : 'border-slate-200 bg-slate-50/80 shadow-sm';
         @endphp
-        <div x-bind:style="reviewPanelSpacerStyle()" aria-hidden="true"></div>
-        <div x-ref="reviewPanel" class="rounded-2xl border px-3 py-2.5 transition-all duration-200 min-w-0 max-w-full overflow-hidden {{ $reviewCardClasses }}">
-            <div class="flex flex-col gap-3 min-w-0 max-w-full xl:flex-row xl:items-center xl:justify-between">
+        <div class="rounded-2xl border p-4 sm:p-5 transition-all duration-200 min-w-0 max-w-full {{ $reviewCardClasses }}">
+            <div class="flex flex-col gap-4 min-w-0 max-w-full sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0 max-w-full flex-1" @if($reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 {{--                        <span class="inline-flex h-6 items-center rounded-lg {{ $reviewStepUnlocked ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }} px-2.5 text-[11px] font-black">۴</span>--}}
@@ -1052,13 +982,13 @@
                         </p>
                     @endif
                 </div>
-                <div class="flex flex-col gap-2 xl:shrink-0 xl:flex-row xl:items-center xl:gap-2.5">
+                <div class="flex flex-col gap-2 shrink-0 sm:flex-row sm:items-center sm:gap-2.5">
                     <button
                         type="submit"
                         @disabled(! $isEditing && ! $canRequestSaveConfirmation)
                         wire:loading.attr="disabled"
                         wire:target="requestSaveConfirmation"
-                        class="inline-flex w-full items-center justify-center rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 px-4 py-3 text-xs font-black text-white shadow-sm shadow-emerald-700/25 transition hover:border-emerald-300 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] active:from-emerald-700 active:via-emerald-800 active:to-teal-800 sm:w-auto"
+                        class="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 px-6 py-3 text-sm font-black text-white shadow-sm shadow-emerald-700/25 transition hover:border-emerald-300 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] active:from-emerald-700 active:via-emerald-800 active:to-teal-800 sm:w-auto"
                     >
                         <span wire:loading.remove wire:target="requestSaveConfirmation">
                             {{ $mode === 'predefined' && !$isEditing ? 'تأیید تحویل' : 'تأیید خدمت' }}
