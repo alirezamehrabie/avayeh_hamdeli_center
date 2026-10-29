@@ -602,29 +602,29 @@
                                             value: 'individual',
                                             title: 'شخصی',
                                             subtitle: 'ثبت برای مددجو',
-                                            activeClass: 'border-cyan-300 bg-cyan-50/80 shadow-sm',
-                                            inactiveClass: 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/40',
-                                            iconActiveClass: 'bg-cyan-600 text-white',
-                                            iconInactiveClass: 'bg-cyan-100 text-cyan-700',
-                                            titleActiveClass: 'text-cyan-950',
+                                            activeClass: 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-400',
+                                            inactiveClass: 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50/60',
+                                            iconActiveClass: 'bg-emerald-600 text-white',
+                                            iconInactiveClass: 'bg-slate-100 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-700',
+                                            titleActiveClass: 'text-emerald-950',
                                             titleInactiveClass: 'text-slate-800',
-                                            subtitleActiveClass: 'text-cyan-700',
+                                            subtitleActiveClass: 'text-emerald-700',
                                             subtitleInactiveClass: 'text-slate-500',
-                                            dotActiveClass: 'bg-cyan-600',
+                                            dotActiveClass: 'bg-emerald-600',
                                         },
                                         {
                                             value: 'family',
                                             title: 'خانوادگی',
                                             subtitle: 'ثبت برای سرپرست',
-                                            activeClass: 'border-amber-400 bg-amber-50 shadow-sm',
-                                            inactiveClass: 'border-slate-200 bg-white hover:border-amber-200 hover:bg-amber-50/40',
-                                            iconActiveClass: 'bg-amber-500 text-white',
-                                            iconInactiveClass: 'bg-amber-100 text-amber-700',
-                                            titleActiveClass: 'text-amber-950',
+                                            activeClass: 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-400',
+                                            inactiveClass: 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50/60',
+                                            iconActiveClass: 'bg-emerald-600 text-white',
+                                            iconInactiveClass: 'bg-slate-100 text-slate-500 group-hover:bg-emerald-50 group-hover:text-emerald-700',
+                                            titleActiveClass: 'text-emerald-950',
                                             titleInactiveClass: 'text-slate-800',
-                                            subtitleActiveClass: 'text-amber-700',
+                                            subtitleActiveClass: 'text-emerald-700',
                                             subtitleInactiveClass: 'text-slate-500',
-                                            dotActiveClass: 'bg-amber-500',
+                                            dotActiveClass: 'bg-emerald-600',
                                         },
                                     ];
                                 },
@@ -842,20 +842,22 @@
                                         >
                                         @error("miscCategories.$index.name") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
 
-                                        <div class="grid grid-cols-2 gap-2">
+                                        <div class="flex min-h-11 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition focus-within:border-emerald-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100 @error("miscCategories.$index.quantity") border-rose-300 bg-rose-50/50 ring-2 ring-rose-100 focus-within:border-rose-400 focus-within:ring-rose-200 @enderror">
                                             <input
                                                 type="number"
                                                 min="0.01"
                                                 step="0.01"
                                                 wire:model.live="miscCategories.{{ $index }}.quantity"
-                                                class="min-h-11 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm tabular-nums text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                class="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm tabular-nums text-slate-800 outline-none placeholder:text-slate-400"
                                                 placeholder="مقدار"
                                             >
-                                            <select wire:model.live="miscCategories.{{ $index }}.unit" class="min-h-11 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100">
-                                                @foreach($unitOptions as $value => $label)
-                                                    <option value="{{ $value }}">{{ $label }}</option>
-                                                @endforeach
-                                            </select>
+                                            <div class="flex shrink-0 items-center border-s border-slate-200 bg-slate-100/70 transition hover:bg-slate-200/60">
+                                                <select wire:model.live="miscCategories.{{ $index }}.unit" class="cursor-pointer bg-transparent py-2 pe-7 ps-3 text-xs font-bold text-slate-700 outline-none sm:text-sm">
+                                                    @foreach($unitOptions as $value => $label)
+                                                        <option value="{{ $value }}">{{ $label }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                         </div>
                                         @error("miscCategories.$index.quantity") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
 
@@ -916,17 +918,19 @@
                                     </div>
                                 </div>
                             @endforeach
+                        </div>
 
+                        <div class="border-t border-slate-100 p-3 sm:p-3.5">
                             <button
                                 type="button"
                                 wire:click="addCategory"
                                 wire:loading.attr="disabled"
                                 wire:target="addCategory"
-                                class="flex min-h-12 w-full items-center justify-center gap-2 rounded-b-xl px-3 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-70"
+                                class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-emerald-300/80 bg-emerald-50/40 px-4 py-2.5 text-sm font-bold text-emerald-800 transition hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                <span class="text-lg leading-none" wire:loading.remove wire:target="addCategory">+</span>
-                                <svg wire:loading wire:target="addCategory" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path></svg>
-                                افزودن دسته‌بندی
+                                <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700" wire:loading.remove wire:target="addCategory">+</span>
+                                <svg wire:loading wire:target="addCategory" class="h-4 w-4 animate-spin text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path></svg>
+                                افزودن دسته‌بندی جدید
                             </button>
                         </div>
                     </div>
@@ -935,7 +939,7 @@
                 <div class="grid gap-4 px-4 pb-5 sm:grid-cols-2 sm:px-5 xl:grid-cols-4">
                     <div class="sm:col-span-2 xl:col-span-4">
                         <label class="mb-2 block text-sm font-bold text-slate-700">توضیحات</label>
-                        <textarea rows="3" wire:model.blur="miscDescription" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
+                        <textarea rows="3" wire:model.blur="miscDescription" placeholder="توضیحات تکمیلی پیرامون خدمت متفرقه (اختیاری)" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"></textarea>
                     </div>
                 </div>
                 @endif
