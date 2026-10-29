@@ -1,7 +1,7 @@
-<div>
+<div class="min-w-0 max-w-full">
     <div x-data="jalaliDateTimeField($wire.entangle('date').live)">
         <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
-        <div class="relative">
+        <div class="relative min-w-0 max-w-full">
             <input
                 type="text"
                 x-ref="input"

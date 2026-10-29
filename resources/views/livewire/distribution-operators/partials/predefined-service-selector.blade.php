@@ -1,11 +1,11 @@
 @props(['compact' => false])
 
-<div>
+<div class="min-w-0 max-w-full">
     @unless($compact)
         <label class="mb-2 block text-sm font-bold text-slate-700">خدمت / پویش </label>
     @endunless
     <div
-        class="relative"
+        class="relative min-w-0 max-w-full"
         x-data="{
             open: false,
             historyActive: false,
@@ -207,9 +207,9 @@
                 @click="toggleSelector()"
                 :aria-expanded="open.toString()"
                 aria-haspopup="dialog"
-                class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                class="flex min-h-12 w-full min-w-0 max-w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
             >
-                <span class="min-w-0 flex-1">
+                <span class="min-w-0 max-w-full flex-1 overflow-hidden">
                     <span class="block truncate text-[10px] font-medium text-slate-400">
                         @if($selectedService)
                             {{ $selectedService->code }}
@@ -218,7 +218,7 @@
                         @endif
                     </span>
                     @if($selectedService)
-                        <span class="mt-1 block truncate text-sm font-bold text-slate-900">
+                        <span class="mt-1 block truncate text-sm font-bold text-slate-900" title="{{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'بدون عنوان') }}">
                             {{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'بدون عنوان') }}
                         </span>
                     @endif

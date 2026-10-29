@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6 min-w-0 max-w-full">
     @if($canManageServices)
         @include('livewire.distribution-operators.partials.latest-misc-service-card')
 

@@ -54,10 +54,10 @@
     </style>
 @endonce
 
-<div wire:key="{{ $selectorId }}-root" class="{{ $class ?? '' }}">
+<div wire:key="{{ $selectorId }}-root" class="{{ $class ?? '' }} min-w-0 max-w-full">
     <label class="mb-2 block text-sm font-bold text-slate-700">مددکار</label>
     <div
-        class="relative"
+        class="relative min-w-0 max-w-full"
         wire:key="{{ $selectorId }}-container"
         x-data="{
             open: false,
@@ -268,9 +268,9 @@
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
             x-bind:class="guideSelection ? '{{ $guideBorderClass }}' : 'border-slate-300 bg-white {{ $accentClasses['hoverBorder'] }}'"
-            class="flex min-h-12 w-full items-center justify-between rounded-2xl border px-4 py-3 text-right shadow-sm transition focus:outline-none focus:ring-4"
+            class="flex min-h-12 w-full min-w-0 max-w-full items-center justify-between rounded-2xl border px-4 py-3 text-right shadow-sm transition focus:outline-none focus:ring-4"
         >
-            <span class="min-w-0 flex-1">
+            <span class="min-w-0 max-w-full flex-1 overflow-hidden">
                 <span class="flex items-center gap-1.5 truncate text-[10px] font-medium text-slate-400">
                     @if($guideSelection && ! $socialWorkerId)
                         <span class="inline-flex items-center gap-1 rounded-md {{ $isEmerald ? 'bg-emerald-50 text-emerald-700 ring-emerald-200/60' : 'bg-cyan-50 text-cyan-700 ring-cyan-200/60' }} px-1.5 py-0.5 text-[10px] font-black ring-1 ring-inset">
@@ -278,10 +278,10 @@
                             گام بعد
                         </span>
                     @endif
-                    <span>{{ $socialWorkerId ? 'کد پرسنلی: ' . $selectedSocialWorkerCode : 'نام یا کد مددکار را جستجو کنید' }}</span>
+                    <span class="truncate">{{ $socialWorkerId ? 'کد پرسنلی: ' . $selectedSocialWorkerCode : 'نام یا کد مددکار را جستجو کنید' }}</span>
                 </span>
                 @if($socialWorkerId)
-                    <span class="mt-1 block truncate text-sm font-bold text-slate-900">
+                    <span class="mt-1 block truncate text-sm font-bold text-slate-900" title="{{ $selectedSocialWorkerDisplay }}">
                         {{ $selectedSocialWorkerDisplay }}
                     </span>
                 @else
@@ -290,21 +290,22 @@
                     </span>
                 @endif
             </span>
-            <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 {{ $accentClasses['icon'] }}">
-                <i class="bi bi-search text-sm"></i>
-            </span>
+            @if(! $socialWorkerId)
+                <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 {{ $accentClasses['icon'] }}">
+                    <i class="bi bi-search text-sm"></i>
+                </span>
+            @else
+                <button
+                    type="button"
+                    @click.stop="clear()"
+                    class="ms-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-200"
+                    aria-label="پاک کردن مددکار"
+                    title="پاک کردن انتخاب"
+                >
+                    <i class="bi bi-x-lg text-xs"></i>
+                </button>
+            @endif
         </button>
-
-        @if($socialWorkerQuery !== '')
-            <button
-                type="button"
-                @click.stop="clear()"
-                class="absolute left-3 top-3.5 inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-                aria-label="پاک کردن مددکار"
-            >
-                <i class="bi bi-x-lg text-xs"></i>
-            </button>
-        @endif
 
         <div
             x-cloak

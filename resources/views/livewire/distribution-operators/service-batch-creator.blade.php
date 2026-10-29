@@ -171,7 +171,7 @@
         },
     }"
     data-service-batch-creator-root
-    class="space-y-3"
+    class="space-y-3 min-w-0 max-w-full"
 >
     @php
         $hasSelectedMode = $isEditing || in_array($mode, ['predefined', 'misc'], true);
@@ -446,7 +446,7 @@
     @if($hasSelectedMode)
     <form wire:submit.prevent="requestSaveConfirmation" x-on:submit="markValidationFocusPending(); window.dispatchEvent(new CustomEvent('misc-worker-save-attempt'))" class="space-y-2.5">
         @if($mode === 'predefined' && !$isEditing)
-            <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <section wire:key="predefined-service-batch-section" class="w-full max-w-full min-w-0 overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div class="border-b border-cyan-100/80 bg-cyan-50/30 px-4 py-3 sm:px-5 sm:py-4">
                     @php
                         $predefinedHeaderTitle = $selectedService
@@ -535,7 +535,7 @@
                 @endif
             </section>
         @else
-            <section wire:key="misc-service-batch-section" class="overflow-visible rounded-xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <section wire:key="misc-service-batch-section" class="w-full max-w-full min-w-0 overflow-visible rounded-xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div class="border-b border-emerald-100/80 bg-emerald-50/30 px-4 py-3 sm:px-5 sm:py-4">
                     @php
                         $miscHeaderTitle = $isEditing ? 'ویرایش '.trim($editingServiceName).'' : trim($miscServiceName);
@@ -589,8 +589,8 @@
                 @if($isEditing)
                     @include('livewire.distribution-operators.partials.misc-edit-body')
                 @else
-                <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
-                    <div class="sm:col-span-2 xl:col-span-1 space-y-4">
+                <div class="grid grid-cols-1 gap-4 p-4 min-w-0 max-w-full sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
+                    <div class="min-w-0 max-w-full space-y-4 sm:col-span-2 xl:col-span-1">
                         <div data-misc-service-type-guidance>
                             <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
                             <div
@@ -694,10 +694,10 @@
                             'selectorId' => 'misc-social-worker-selector',
                             'guideSelection' => ! $socialWorkerId,
                             'keyboardAwareMobileSheet' => true,
-                            'class' => 'sm:col-span-2 xl:col-span-3',
+                            'class' => 'min-w-0 max-w-full sm:col-span-2 xl:col-span-3',
                         ])
                     @else
-                        <div class="sm:col-span-2 xl:col-span-3">
+                        <div class="min-w-0 max-w-full sm:col-span-2 xl:col-span-3">
                             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center">
                                 <p class="text-sm font-black text-slate-600">۲. انتخاب مددکار</p>
                                 <p class="mt-1 text-xs font-bold leading-5 text-slate-400">ابتدا نوع خدمت را تعیین کنید</p>
@@ -990,9 +990,9 @@
                 ($reviewStepUnlocked ? 'lg:border-emerald-200 lg:bg-white' : 'lg:border-slate-200 lg:bg-slate-50');
         @endphp
         <div x-bind:style="reviewPanelSpacerStyle()" aria-hidden="true"></div>
-        <div x-ref="reviewPanel" class="rounded-2xl border px-3 py-2.5 transition-all duration-200 {{ $reviewCardClasses }}">
-            <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div class="min-w-0 flex-1" @if($reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
+        <div x-ref="reviewPanel" class="rounded-2xl border px-3 py-2.5 transition-all duration-200 min-w-0 max-w-full overflow-hidden {{ $reviewCardClasses }}">
+            <div class="flex flex-col gap-3 min-w-0 max-w-full xl:flex-row xl:items-center xl:justify-between">
+                <div class="min-w-0 max-w-full flex-1" @if($reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 {{--                        <span class="inline-flex h-6 items-center rounded-lg {{ $reviewStepUnlocked ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }} px-2.5 text-[11px] font-black">۴</span>--}}
                         <span
@@ -1041,7 +1041,7 @@
                             <p class="px-1 text-[10px] font-bold text-slate-400">تاریخ ثبت: {{ $reviewSummary['date_label'] ?? '-' }}</p>
                         </div>
                     @else
-                        <p class="mt-1 truncate text-[11px] font-bold leading-5 text-slate-500">
+                        <p class="mt-1 truncate max-w-full text-[11px] font-bold leading-5 text-slate-500">
                             {{ $reviewSummary['worker_name'] ?? '-' }}
                             <span class="mx-1 text-slate-300">/</span>
                             {{ $reviewSummary['date_label'] ?? '-' }}

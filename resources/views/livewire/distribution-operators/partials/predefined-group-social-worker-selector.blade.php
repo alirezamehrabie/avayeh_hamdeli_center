@@ -52,10 +52,10 @@
     </style>
 @endonce
 
-<div wire:key="{{ $selectorId }}-root">
+<div wire:key="{{ $selectorId }}-root" class="min-w-0 max-w-full">
     <label class="mb-2 block text-sm font-bold text-slate-700">مددکار</label>
     <div
-        class="relative"
+        class="relative min-w-0 max-w-full"
         x-data="{
             open: false,
             historyActive: false,
@@ -292,14 +292,14 @@
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
             x-bind:class="guideSelection ? 'distribution-operator-guide-border distribution-operator-guide-zoom bg-white' : 'border-slate-300 bg-white {{ $accentClasses['hoverBorder'] }}'"
-            class="flex min-h-12 w-full items-center justify-between rounded-2xl border py-3 ps-4 {{ $groupWorkerId ? 'pe-16' : 'pe-4' }} text-right shadow-sm transition focus:outline-none focus:ring-4"
+            class="flex min-h-12 w-full min-w-0 max-w-full items-center justify-between rounded-2xl border py-3 ps-4 {{ $groupWorkerId ? 'pe-16' : 'pe-4' }} text-right shadow-sm transition focus:outline-none focus:ring-4"
         >
-            <span class="min-w-0 flex-1">
+            <span class="min-w-0 max-w-full flex-1 overflow-hidden">
                 <span class="block truncate text-[10px] font-medium text-slate-400">
                     {{ $groupWorkerId ? 'کد پرسنلی: ' . $groupWorkerCode : 'نام یا کد مددکار را جستجو کنید' }}
                 </span>
                 @if($groupWorkerId)
-                    <span class="mt-1 block truncate text-sm font-bold text-slate-900">
+                    <span class="mt-1 block truncate text-sm font-bold text-slate-900" title="{{ $groupWorkerDisplay }}">
                         {{ $groupWorkerDisplay }}
                     </span>
                 @else
