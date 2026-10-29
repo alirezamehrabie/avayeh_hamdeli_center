@@ -13,9 +13,9 @@
     data-predefined-worker-group-index="{{ $groupIndex }}"
     data-validation-scope
     wire:key="predefined-worker-group-{{ $workerGroup['uid'] ?? $groupIndex }}"
-    class="rounded-2xl border border-cyan-200 bg-white shadow-sm"
+    class="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-cyan-200 bg-white shadow-sm"
 >
-    <div class="flex items-center gap-2.5 border-b border-slate-100 bg-cyan-50/40 px-3.5 py-2.5 sm:px-4">
+    <div class="flex items-center gap-2.5 border-b border-slate-100 bg-cyan-50/40 px-3.5 py-2.5 sm:px-4 min-w-0 max-w-full">
         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-[11px] font-black text-cyan-700">{{ $groupIndex + 1 }}</span>
         <p class="min-w-0 flex-1 truncate text-sm font-black text-slate-800">
             {{ $groupWorkerId ? trim((string) ($workerGroup['worker_display'] ?? '')) ?: 'مددکار' : 'مددکار جدید' }}
@@ -60,32 +60,32 @@
         @endif
     </div>
 
-    <div class="space-y-3 p-3 sm:p-3.5">
+    <div class="w-full min-w-0 max-w-full space-y-3 p-3 sm:p-3.5">
         @include('livewire.distribution-operators.partials.predefined-group-social-worker-selector', [
             'groupIndex' => $groupIndex,
             'group' => $workerGroup,
         ])
 
         @if(! $groupWorkerId)
-            <div class="flex items-center gap-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-3.5 py-4">
+            <div class="flex items-center gap-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-3.5 py-4 min-w-0 max-w-full">
                 <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200">
                     <i class="bi bi-lock text-sm"></i>
                 </span>
-                <div class="min-w-0">
+                <div class="min-w-0 flex-1">
                     <p class="text-sm font-black text-slate-500">مقدارها</p>
                     <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-400">ابتدا مددکار را انتخاب کنید</p>
                 </div>
             </div>
         @else
             @if($workerGroup['has_existing_allocation'] ?? false)
-                <div class="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3.5 py-2 text-xs font-bold text-indigo-800 shadow-sm">
+                <div class="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3.5 py-2 text-xs font-bold text-indigo-800 shadow-sm min-w-0 max-w-full">
                     <i class="bi bi-info-circle-fill text-indigo-600 text-sm shrink-0"></i>
-                    <span class="flex-1">این مددکار از قبل در این خدمت سهمیه دارد. مقادیر واردشده جایگزین سهمیه قبلی خواهند شد.</span>
+                    <span class="min-w-0 flex-1 text-[11px] sm:text-xs leading-5">این مددکار از قبل در این خدمت سهمیه دارد. مقادیر واردشده جایگزین سهمیه قبلی خواهند شد.</span>
                 </div>
             @endif
 
-            <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-2.5">
-                <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <div class="w-full min-w-0 max-w-full rounded-xl border border-slate-200 bg-slate-50/80 p-2 sm:p-2.5">
+                <div class="grid grid-cols-1 gap-2.5 w-full min-w-0 max-w-full sm:grid-cols-2 xl:grid-cols-3">
                     @foreach($selectedServiceCategories as $category)
                         @php
                             $categoryMetrics = $selectedServiceCategoryMetrics[(int) $category->id] ?? ['quantity' => (float) $category->quantity, 'allocated' => 0.0, 'assignable' => 0.0];
@@ -110,11 +110,11 @@
                         @endphp
                         <div
                             wire:key="predefined-group-{{ $groupIndex }}-category-card-{{ $category->id }}"
-                            class="rounded-xl border {{ $hasError ? 'border-rose-200 bg-rose-50/70' : 'border-slate-200 bg-white' }} p-2.5 shadow-sm shadow-slate-900/[0.02] transition-colors duration-150"
+                            class="w-full min-w-0 max-w-full overflow-hidden rounded-xl border {{ $hasError ? 'border-rose-200 bg-rose-50/70' : 'border-slate-200 bg-white' }} p-2.5 shadow-sm shadow-slate-900/[0.02] transition-colors duration-150"
                         >
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
+                            <div class="flex items-start justify-between gap-2 min-w-0 max-w-full">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-black text-slate-900" title="{{ $category->name }}">{{ $category->name }}</p>
                                     @if($previousAllocation > 0 || $deliveredQuantity > 0)
                                         <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
                                             @if($previousAllocation > 0)
@@ -132,13 +132,13 @@
                                         </div>
                                     @endif
                                 </div>
-                                <span class="inline-flex shrink-0 items-center gap-1 rounded-lg border border-cyan-100/70 bg-cyan-50/60 px-2 py-0.5 text-[11px]">
+                                <span class="inline-flex shrink-0 items-center gap-1 rounded-lg border border-cyan-100/70 bg-cyan-50/60 px-2 py-0.5 text-[11px] whitespace-nowrap">
                                     <span class="font-bold tabular-nums text-slate-700" dir="ltr">{{ $assignableQuantityLabel }}</span>
                                     <span class="text-[10px] font-semibold text-slate-400">{{ $categoryUnitLabel }}</span>
                                 </span>
                             </div>
 
-                            <div class="mt-2 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
+                            <div class="mt-2.5 flex items-center gap-1.5 w-full min-w-0 max-w-full">
                                 <input
                                     type="text"
                                     id="predefined-allocation-{{ $groupIndex }}-{{ $category->id }}"
@@ -178,7 +178,7 @@
                                             el.dispatchEvent(new Event('input', { bubbles: true }));
                                         }
                                     "
-                                    class="min-w-0 rounded-lg border {{ $hasError ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-2.5 py-2 text-center text-sm font-black tabular-nums outline-none transition focus:ring-2"
+                                    class="w-full min-w-0 flex-1 rounded-lg border {{ $hasError ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-2.5 py-2 text-center text-sm font-black tabular-nums outline-none transition focus:ring-2"
                                     placeholder="0"
                                     aria-invalid="{{ $hasError ? 'true' : 'false' }}"
                                 >
@@ -187,7 +187,7 @@
                                     wire:key="predefined-max-btn-{{ $groupIndex }}-{{ $category->id }}"
                                     wire:click="useMaxPredefinedGroupAllocation({{ $groupIndex }}, {{ $category->id }})"
                                     @disabled($assignableQuantity <= 0)
-                                    class="rounded-lg border border-cyan-100 bg-cyan-50 px-2 py-2 text-[11px] font-bold text-cyan-700 transition hover:bg-cyan-100 disabled:opacity-40"
+                                    class="shrink-0 rounded-lg border border-cyan-100 bg-cyan-50 px-2 sm:px-2.5 py-2 text-[11px] font-bold text-cyan-700 transition hover:bg-cyan-100 active:scale-95 disabled:opacity-40 whitespace-nowrap"
                                 >
                                     حداکثر
                                 </button>
@@ -196,21 +196,21 @@
                                     wire:key="predefined-clear-btn-{{ $groupIndex }}-{{ $category->id }}"
                                     wire:click="clearPredefinedGroupAllocation({{ $groupIndex }}, {{ $category->id }})"
                                     @disabled($allocatedPreview <= 0)
-                                    class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-[11px] font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-40"
+                                    class="shrink-0 rounded-lg border border-slate-200 bg-white px-2 sm:px-2.5 py-2 text-[11px] font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 active:scale-95 disabled:opacity-40 whitespace-nowrap"
                                 >
                                     پاک
                                 </button>
                             </div>
 
-                            <div class="mt-1.5 min-h-[1.25rem]">
+                            <div class="mt-1.5 min-h-[1.25rem] min-w-0 max-w-full">
                                 @if($isOverAllocated)
-                                    <p class="text-[11px] font-bold text-rose-600">بیشتر از موجودی قابل تخصیص</p>
+                                    <p class="text-[11px] font-bold text-rose-600 break-words">بیشتر از موجودی قابل تخصیص</p>
                                 @elseif($isBelowDelivered)
-                                    <p class="text-[11px] font-bold text-rose-600">
+                                    <p class="text-[11px] font-bold text-rose-600 break-words">
                                         کمتر از مقدار تحویل‌شده (<span dir="ltr" class="inline-block tabular-nums font-bold">{{ $formatCategoryQuantity($deliveredQuantity) }}</span>)
                                     </p>
                                 @elseif($allocatedPreview > 0)
-                                    <p class="text-[11px] font-semibold text-slate-400">
+                                    <p class="text-[11px] font-semibold text-slate-400 break-words">
                                         <span dir="ltr" class="inline-block font-bold tabular-nums text-slate-600">{{ $allocatedPreviewLabel }}</span>
                                         <span class="mx-0.5">از</span>
                                         <span dir="ltr" class="inline-block font-bold tabular-nums text-slate-600">{{ $assignableQuantityLabel }}</span>
@@ -218,7 +218,7 @@
                                 @endif
 
                                 @error('predefinedWorkerGroups.' . $groupIndex . '.allocations.' . $category->id)
-                                    <p data-validation-error class="text-[11px] text-rose-600">{{ $message }}</p>
+                                    <p data-validation-error class="text-[11px] text-rose-600 break-words">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>

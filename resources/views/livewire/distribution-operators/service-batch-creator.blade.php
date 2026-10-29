@@ -383,7 +383,7 @@
     @if($hasSelectedMode)
     <form wire:submit.prevent="requestSaveConfirmation" x-on:submit="markValidationFocusPending(); window.dispatchEvent(new CustomEvent('misc-worker-save-attempt'))" class="space-y-2.5">
         @if($mode === 'predefined' && !$isEditing)
-            <section wire:key="predefined-service-batch-section" class="w-full max-w-full min-w-0 overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <section wire:key="predefined-service-batch-section" class="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div class="border-b border-cyan-100/80 bg-cyan-50/30 px-4 py-3 sm:px-5 sm:py-4">
                     @php
                         $predefinedHeaderTitle = $selectedService
@@ -452,12 +452,12 @@
                         }"
                         x-on:predefined-worker-group-added.window="scrollToNewGroup($event)"
                         x-on:scroll-to-predefined-worker-group.window="scrollToNewGroup($event)"
-                        class="space-y-3 p-3 sm:p-4"
+                        class="w-full min-w-0 max-w-full space-y-3 p-3 sm:p-4"
                     >
                         @include('livewire.distribution-operators.partials.predefined-service-existing-allocations')
 
-                        <div class="flex items-center justify-between gap-3 px-1 pt-1">
-                            <p class="truncate text-[11px] font-bold text-slate-500">
+                        <div class="flex items-center justify-between gap-3 px-1 pt-1 min-w-0 max-w-full">
+                            <p class="min-w-0 flex-1 truncate text-[11px] font-bold text-slate-500">
                                 {{ $selectedService->code }} · موجودی کل: <span dir="ltr" class="inline-block font-bold tabular-nums text-slate-700">{{ number_format((float) $selectedService->total_quantity, 2) }}</span>
                             </p>
                             <div class="flex shrink-0 items-center gap-1.5">

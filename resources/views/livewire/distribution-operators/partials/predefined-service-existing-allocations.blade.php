@@ -10,13 +10,13 @@
     x-data="{
         expanded: false
     }"
-    class="overflow-hidden rounded-2xl border {{ $existingWorkersCount > 0 ? 'border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-white' : 'border-slate-200 bg-slate-50/60' }} transition-all"
+    class="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border {{ $existingWorkersCount > 0 ? 'border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-white' : 'border-slate-200 bg-slate-50/60' }} transition-all"
 >
     <div
-        class="flex cursor-pointer items-center justify-between gap-3 px-3.5 py-3 select-none hover:bg-indigo-50/30 transition sm:px-4"
+        class="flex cursor-pointer items-center justify-between gap-3 px-3.5 py-3 select-none hover:bg-indigo-50/30 transition sm:px-4 min-w-0 max-w-full"
         @click="expanded = !expanded"
     >
-        <div class="flex items-center gap-2.5 min-w-0">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl {{ $existingWorkersCount > 0 ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/20' : 'bg-slate-200 text-slate-500' }}">
                 <i class="bi bi-people-fill text-sm"></i>
             </span>
@@ -57,7 +57,7 @@
     <div
         x-show="expanded"
         x-collapse
-        class="border-t border-slate-100 bg-white/70 p-3 sm:p-4 space-y-2.5"
+        class="w-full min-w-0 max-w-full border-t border-slate-100 bg-white/70 p-3 sm:p-4 space-y-2.5"
     >
         @if($existingWorkersCount === 0)
             <div class="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-center">
@@ -65,14 +65,14 @@
                 <p class="mt-1 text-[11px] font-medium text-slate-400">از فرم زیر می‌توانید اولین سهمیه‌ها را برای مددکاران مورد نظر ثبت کنید.</p>
             </div>
         @else
-            <div class="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-2.5 w-full min-w-0 max-w-full sm:grid-cols-2 lg:grid-cols-3">
                 @foreach($existingAllocations as $item)
                     @php
                         $isAlreadyInForm = collect($predefinedWorkerGroups)->contains(fn ($grp) => (int) ($grp['social_worker_id'] ?? 0) === (int) $item['worker_id']);
                     @endphp
-                    <div class="flex flex-col justify-between rounded-xl border {{ $isAlreadyInForm ? 'border-cyan-200 bg-cyan-50/30' : 'border-slate-200 bg-white' }} p-3 shadow-sm transition hover:border-indigo-200">
+                    <div class="flex flex-col justify-between w-full min-w-0 max-w-full overflow-hidden rounded-xl border {{ $isAlreadyInForm ? 'border-cyan-200 bg-cyan-50/30' : 'border-slate-200 bg-white' }} p-3 shadow-sm transition hover:border-indigo-200">
                         <div>
-                            <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
+                            <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2 min-w-0 max-w-full">
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-1.5">
                                         <p class="truncate text-xs font-black text-slate-900 sm:text-sm">{{ $item['worker_name'] }}</p>
@@ -89,8 +89,8 @@
 
                             <div class="mt-2.5 space-y-1.5 text-[11px]">
                                 @foreach($item['categories'] as $cat)
-                                    <div class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2 py-1 text-slate-700">
-                                        <span class="truncate font-bold">{{ $cat['name'] }}:</span>
+                                    <div class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2 py-1 text-slate-700 min-w-0 max-w-full">
+                                        <span class="truncate font-bold min-w-0 flex-1">{{ $cat['name'] }}:</span>
                                         <span class="shrink-0 tabular-nums font-black" dir="ltr">
                                             {{ number_format($cat['allocated_quantity'], 2) }}
                                             @if($cat['delivered_quantity'] > 0)
@@ -102,7 +102,7 @@
                             </div>
                         </div>
 
-                        <div class="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[10px]">
+                        <div class="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[10px] min-w-0 max-w-full">
                             <span class="truncate text-slate-400">
                                 ثبت: {{ $item['categories']->first()['assigned_by_name'] ?? '-' }}
                             </span>
