@@ -130,7 +130,7 @@
             });
         },
         usesFixedMobileReviewPanel() {
-            return this.isEditingService && window.innerWidth < 1024;
+            return window.innerWidth < 1024;
         },
         syncReviewPanelHeight() {
             if (! this.usesFixedMobileReviewPanel()) {
@@ -828,9 +828,7 @@
                                 <div data-service-category-index="{{ $index }}"
                                      x-data="{
                                          open: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }},
-                                         isNewCategory: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }},
-                                         nameHasValue: @js(trim((string) ($category['name'] ?? '')) !== ''),
-                                    }"
+                                     }"
                                     class="p-3 sm:p-3.5">
                                     <div class="flex items-center gap-2.5">
                                         <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black {{ $categoryIndexBadgeClass }}">
@@ -894,11 +892,7 @@
                                             type="text"
                                             wire:model.live="miscCategories.{{ $index }}.name"
                                             data-category-name-input
-                                            @input="nameHasValue = $el.value.trim().length > 0"
-                                            x-bind:class="isNewCategory && ! nameHasValue
-                                                ? 'border-rose-400 bg-rose-50 ring-2 ring-rose-200'
-                                                : 'border-slate-200 bg-slate-50 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100'"
-                                            class="w-full rounded-lg border px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400"
+                                            class="w-full rounded-lg border px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 @error("miscCategories.$index.name") border-rose-300 bg-rose-50/50 ring-2 ring-rose-100 focus:border-rose-400 focus:ring-rose-200 @else border-slate-200 bg-slate-50 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 @enderror"
                                             placeholder="نام دسته‌بندی"
                                         >
                                         @error("miscCategories.$index.name") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
@@ -1036,20 +1030,18 @@
             $reviewGroups = $reviewSummary['groups'] ?? [];
             $reviewWorkerCount = count($reviewGroups);
 
-            // In edit mode the save action is the most-repeated task, so keep it
-            // pinned to the bottom of the viewport instead of relying on sticky
-            // inside the layout's nested mobile scroll container. Keep it above
-            // page content but below navigation overlays and modal/sheet layers.
-            if ($isEditing) {
-                $reviewCardClasses = 'fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-20 border-emerald-200 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.12)] sm:left-6 sm:right-6 lg:sticky lg:bottom-4 lg:left-auto lg:right-auto';
-            } else {
-                $reviewCardClasses = $reviewStepUnlocked
-                    ? 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5'
-                    : 'border-slate-200 bg-slate-50';
-            }
+            // On mobile devices, keep the review and save action bar pinned to the
+            // bottom of the viewport so the operator has immediate thumb access and
+            // real-time completion feedback without scrolling to the end of a long form.
+            $reviewCardClasses = 'fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-20 ' .
+                ($reviewStepUnlocked
+                    ? 'border-emerald-300 bg-white/95 shadow-[0_-6px_24px_rgba(15,23,42,0.14)] backdrop-blur-md'
+                    : 'border-slate-200 bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] backdrop-blur-md') .
+                ' sm:left-6 sm:right-6 lg:static lg:bottom-auto lg:left-auto lg:right-auto lg:z-auto lg:shadow-sm ' .
+                ($reviewStepUnlocked ? 'lg:border-emerald-200 lg:bg-white' : 'lg:border-slate-200 lg:bg-slate-50');
         @endphp
         <div x-bind:style="reviewPanelSpacerStyle()" aria-hidden="true"></div>
-        <div x-ref="reviewPanel" class="rounded-2xl border px-3 py-2.5 {{ $reviewCardClasses }}">
+        <div x-ref="reviewPanel" class="rounded-2xl border px-3 py-2.5 transition-all duration-200 {{ $reviewCardClasses }}">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <div class="min-w-0 flex-1" @if($reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">

@@ -20,6 +20,7 @@
             'meta' => 'text-cyan-700',
             'icon' => 'text-cyan-600',
         ];
+    $guideBorderClass = $isEmerald ? 'distribution-operator-guide-border-emerald' : 'distribution-operator-guide-border-cyan';
 @endphp
 
 @once
@@ -28,16 +29,27 @@
             0% { background-position: 0 0, 0% 50%; }
             100% { background-position: 0 0, 300% 50%; }
         }
-        .distribution-operator-guide-border {
+        .distribution-operator-guide-border-emerald {
             border: 2px solid transparent !important;
             background:
                 linear-gradient(#ffffff, #ffffff) padding-box,
-                linear-gradient(90deg, #ea2e34, #ff9eac, #ffe0e3, #fb7185, #f43f5e) border-box;
+                linear-gradient(90deg, #059669, #34d399, #a7f3d0, #6ee7b7, #10b981, #059669) border-box;
             background-size: 100% 100%, 300% 100%;
-            animation: distributionOperatorGuideBorder 2.0s linear infinite;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+            animation: distributionOperatorGuideBorder 2.5s linear infinite;
+        }
+        .distribution-operator-guide-border-cyan {
+            border: 2px solid transparent !important;
+            background:
+                linear-gradient(#ffffff, #ffffff) padding-box,
+                linear-gradient(90deg, #0891b2, #22d3ee, #a5f3fc, #67e8f9, #06b6d4, #0891b2) border-box;
+            background-size: 100% 100%, 300% 100%;
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+            animation: distributionOperatorGuideBorder 2.5s linear infinite;
         }
         @media (prefers-reduced-motion: reduce) {
-            .distribution-operator-guide-border { animation: none; }
+            .distribution-operator-guide-border-emerald,
+            .distribution-operator-guide-border-cyan { animation: none; }
         }
     </style>
 @endonce
@@ -255,12 +267,18 @@
             @click.stop="guideSelection = false; toggleSelector()"
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
-            x-bind:class="guideSelection ? 'distribution-operator-guide-border' : 'border-slate-300 bg-white {{ $accentClasses['hoverBorder'] }}'"
+            x-bind:class="guideSelection ? '{{ $guideBorderClass }}' : 'border-slate-300 bg-white {{ $accentClasses['hoverBorder'] }}'"
             class="flex min-h-12 w-full items-center justify-between rounded-2xl border px-4 py-3 text-right shadow-sm transition focus:outline-none focus:ring-4"
         >
             <span class="min-w-0 flex-1">
-                <span class="block truncate text-[10px] font-medium text-slate-400">
-                    {{ $socialWorkerId ? 'کد پرسنلی: ' . $selectedSocialWorkerCode : 'نام یا کد مددکار را جستجو کنید' }}
+                <span class="flex items-center gap-1.5 truncate text-[10px] font-medium text-slate-400">
+                    @if($guideSelection && ! $socialWorkerId)
+                        <span class="inline-flex items-center gap-1 rounded-md {{ $isEmerald ? 'bg-emerald-50 text-emerald-700 ring-emerald-200/60' : 'bg-cyan-50 text-cyan-700 ring-cyan-200/60' }} px-1.5 py-0.5 text-[10px] font-black ring-1 ring-inset">
+                            <span class="h-1.5 w-1.5 animate-pulse rounded-full {{ $isEmerald ? 'bg-emerald-500' : 'bg-cyan-500' }}"></span>
+                            گام بعد
+                        </span>
+                    @endif
+                    <span>{{ $socialWorkerId ? 'کد پرسنلی: ' . $selectedSocialWorkerCode : 'نام یا کد مددکار را جستجو کنید' }}</span>
                 </span>
                 @if($socialWorkerId)
                     <span class="mt-1 block truncate text-sm font-bold text-slate-900">
@@ -272,7 +290,7 @@
                     </span>
                 @endif
             </span>
-            <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+            <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 {{ $accentClasses['icon'] }}">
                 <i class="bi bi-search text-sm"></i>
             </span>
         </button>

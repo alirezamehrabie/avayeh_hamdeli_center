@@ -29,9 +29,10 @@
             border: 2px solid transparent !important;
             background:
                 linear-gradient(#ffffff, #ffffff) padding-box,
-                linear-gradient(90deg, #ea2e34, #ff9eac, #ffe0e3, #fb7185, #f43f5e) border-box;
+                linear-gradient(90deg, #0891b2, #22d3ee, #a5f3fc, #67e8f9, #06b6d4, #0891b2) border-box;
             background-size: 100% 100%, 300% 100%;
-            animation: distributionOperatorGuideBorder 2.0s linear infinite;
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.12);
+            animation: distributionOperatorGuideBorder 2.5s linear infinite;
         }
         @keyframes distributionOperatorGuideZoom {
             0% { transform: scale(0.96); }
