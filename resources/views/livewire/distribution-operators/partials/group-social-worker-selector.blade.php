@@ -71,7 +71,9 @@
                 this.syncViewport();
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
-                this.$cleanup(() => this.destroy());
+                if (typeof this.$cleanup === 'function') {
+                    this.$cleanup(() => this.destroy());
+                }
             },
             syncViewport() {
                 if (window.visualViewport) {

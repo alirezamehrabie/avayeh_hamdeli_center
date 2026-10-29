@@ -59,7 +59,9 @@
                 window.addEventListener('open-predefined-service-selector', this.openPredefinedServiceSelectorHandler);
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
-                this.$cleanup(() => this.destroy());
+                if (typeof this.$cleanup === 'function') {
+                    this.$cleanup(() => this.destroy());
+                }
             },
             destroy() {
                 if (this.popStateHandler) {

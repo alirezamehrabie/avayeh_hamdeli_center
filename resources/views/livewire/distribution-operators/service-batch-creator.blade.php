@@ -752,6 +752,7 @@
                             'selectorId' => 'misc-social-worker-selector',
                             'guideSelection' => ! $socialWorkerId,
                             'keyboardAwareMobileSheet' => true,
+                            'class' => 'sm:col-span-2 xl:col-span-3',
                         ])
                     @else
                         <div class="sm:col-span-2 xl:col-span-3">

@@ -107,7 +107,9 @@
                 this.syncViewport();
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
-                this.$cleanup(() => this.destroy());
+                if (typeof this.$cleanup === 'function') {
+                    this.$cleanup(() => this.destroy());
+                }
 
                 // When the first-worker section first appears (a service was just
                 // picked and no worker is chosen yet), gently bring it into view and
