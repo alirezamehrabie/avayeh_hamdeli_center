@@ -361,7 +361,7 @@
                         inputmode="search"
                         enterkeyhint="search"
                         @focus="syncViewport()"
-                        class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }}"
+                        class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }} [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-ms-clear]:hidden"
                         placeholder="نام، کد مددکار یا موبایل"
                         autocomplete="off"
                     >

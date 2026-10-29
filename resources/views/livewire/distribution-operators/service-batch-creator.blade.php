@@ -456,33 +456,6 @@
                     <div
                         wire:key="predefined-service-header-{{ $selectedServiceId ?: 'empty' }}"
                         class="flex items-center gap-2.5"
-                        x-data="{
-                            fullTitle: @js($predefinedHeaderTitle),
-                            shownTitle: '',
-                            hasAnimated: false,
-                            cursorVisible: false,
-                            init() {
-                                this.typeTitle();
-                            },
-                            typeTitle() {
-                                this.hasAnimated = true;
-                                this.cursorVisible = true;
-                                const chars = Array.from(this.fullTitle || '');
-                                const step = 34;
-
-                                chars.forEach((char, index) => {
-                                    window.setTimeout(() => {
-                                        this.shownTitle += char;
-
-                                        if (index === chars.length - 1) {
-                                            window.setTimeout(() => {
-                                                this.cursorVisible = false;
-                                            }, 450);
-                                        }
-                                    }, index * step);
-                                });
-                            },
-                        }"
                     >
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500 text-white">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -490,8 +463,8 @@
                             </svg>
                         </span>
                         <div class="min-w-0 flex-1">
-                            <h2 class="overflow-hidden whitespace-nowrap text-[15px] font-bold tracking-[-0.01em] text-cyan-900/90" :title="fullTitle" aria-label="{{ $predefinedHeaderTitle }}" data-predefined-service-header-title="{{ $predefinedHeaderTitle }}">
-                                <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-cyan-500/80 align-middle" x-transition.opacity></span>
+                            <h2 class="overflow-hidden whitespace-nowrap text-[15px] font-bold tracking-[-0.01em] text-cyan-900/90" title="{{ $predefinedHeaderTitle }}" aria-label="{{ $predefinedHeaderTitle }}" data-predefined-service-header-title="{{ $predefinedHeaderTitle }}">
+                                {{ $predefinedHeaderTitle }}
                             </h2>
                         </div>
                         @include('livewire.distribution-operators.partials.predefined-service-selector', ['compact' => true])
@@ -571,37 +544,6 @@
                     <div
                         wire:key="misc-service-header-{{ $isEditing ? 'edit-'.$editingServiceId : md5(trim($miscServiceName)) }}"
                         class="flex items-center justify-between gap-3"
-                        x-data="{
-                            fullTitle: @js($miscHeaderTitle),
-                            shownTitle: @js($isEditing ? $miscHeaderTitle : ''),
-                            hasAnimated: @js($isEditing),
-                            cursorVisible: false,
-                            init() {
-                                if (this.hasAnimated) {
-                                    return;
-                                }
-
-                                this.typeTitle();
-                            },
-                            typeTitle() {
-                                this.hasAnimated = true;
-                                this.cursorVisible = true;
-                                const chars = Array.from(this.fullTitle || '');
-                                const step = 34;
-
-                                chars.forEach((char, index) => {
-                                    window.setTimeout(() => {
-                                        this.shownTitle += char;
-
-                                        if (index === chars.length - 1) {
-                                            window.setTimeout(() => {
-                                                this.cursorVisible = false;
-                                            }, 450);
-                                        }
-                                    }, index * step);
-                                });
-                            },
-                        }"
                     >
                         <div class="flex min-w-0 items-center gap-2.5">
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
@@ -618,8 +560,8 @@
                                 @endif
                             </span>
                             <div class="min-w-0 flex items-center gap-1.5">
-                                <h2 class="truncate text-sm font-bold text-emerald-950" :title="fullTitle" aria-label="{{ $miscHeaderTitle }}" data-service-header-title="{{ $miscHeaderTitle }}">
-                                    <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-emerald-500 align-middle" x-transition.opacity></span>
+                                <h2 class="truncate text-sm font-bold text-emerald-950" title="{{ $miscHeaderTitle }}" aria-label="{{ $miscHeaderTitle }}" data-service-header-title="{{ $miscHeaderTitle }}">
+                                    {{ $miscHeaderTitle }}
                                 </h2>
                                 @if(! $isEditing && trim($miscServiceName) !== '')
                                     <button
@@ -831,16 +773,19 @@
                                      }"
                                     class="p-3 sm:p-3.5">
                                     <div class="flex items-center gap-2.5">
-                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black {{ $categoryIndexBadgeClass }}">
-                                            {{ $index + 1 }}
-                                        </span>
-                                        <span class="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
-                                            {{ $category['name'] ?: 'دسته‌بندی ' . ($index + 1) }}
-                                        </span>
+                                        <div @click="open = !open" class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 select-none" role="button" :aria-expanded="open.toString()">
+                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black {{ $categoryIndexBadgeClass }}">
+                                                {{ $index + 1 }}
+                                            </span>
+                                            <span class="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
+                                                {{ $category['name'] ?: 'دسته‌بندی ' . ($index + 1) }}
+                                            </span>
+                                        </div>
                                         <button
                                             type="button"
                                             x-on:click="open = !open"
-                                            class="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                            aria-label="باز و بسته کردن دسته‌بندی {{ $index + 1 }}"
                                         >
                                             <svg class="h-4 w-4 transition-transform" :class="{ 'rotate-180': open }" viewBox="0 0 24 24" fill="none">
                                                 <path d="M19 9l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -873,7 +818,7 @@
                                                     },
                                                 }))
                                             "
-                                            class="shrink-0 rounded-lg p-1.5 text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
+                                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-rose-400 transition hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-200"
                                             aria-label="حذف دسته‌بندی {{ $index + 1 }}"
                                         >
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -892,7 +837,7 @@
                                             type="text"
                                             wire:model.live="miscCategories.{{ $index }}.name"
                                             data-category-name-input
-                                            class="w-full rounded-lg border px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 @error("miscCategories.$index.name") border-rose-300 bg-rose-50/50 ring-2 ring-rose-100 focus:border-rose-400 focus:ring-rose-200 @else border-slate-200 bg-slate-50 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 @enderror"
+                                            class="min-h-11 w-full rounded-lg border px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 @error("miscCategories.$index.name") border-rose-300 bg-rose-50/50 ring-2 ring-rose-100 focus:border-rose-400 focus:ring-rose-200 @else border-slate-200 bg-slate-50 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 @enderror"
                                             placeholder="نام دسته‌بندی"
                                         >
                                         @error("miscCategories.$index.name") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
@@ -903,10 +848,10 @@
                                                 min="0.01"
                                                 step="0.01"
                                                 wire:model.live="miscCategories.{{ $index }}.quantity"
-                                                class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                class="min-h-11 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm tabular-nums text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                                                 placeholder="مقدار"
                                             >
-                                            <select wire:model.live="miscCategories.{{ $index }}.unit" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100">
+                                            <select wire:model.live="miscCategories.{{ $index }}.unit" class="min-h-11 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100">
                                                 @foreach($unitOptions as $value => $label)
                                                     <option value="{{ $value }}">{{ $label }}</option>
                                                 @endforeach
@@ -977,7 +922,7 @@
                                 wire:click="addCategory"
                                 wire:loading.attr="disabled"
                                 wire:target="addCategory"
-                                class="flex w-full items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                                class="flex min-h-12 w-full items-center justify-center gap-2 rounded-b-xl px-3 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 <span class="text-lg leading-none" wire:loading.remove wire:target="addCategory">+</span>
                                 <svg wire:loading wire:target="addCategory" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path></svg>

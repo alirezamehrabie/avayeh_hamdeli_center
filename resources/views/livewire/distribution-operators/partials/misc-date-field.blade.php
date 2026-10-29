@@ -16,8 +16,8 @@
                 autocomplete="off"
                 data-jdp-readonly
                 data-jdp
-                placeholder="1405/04/03"
-                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pe-11 text-sm font-medium text-slate-700 outline-none transition ltr:text-left focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                placeholder="{{ \App\Helpers\Morilog\Jalalian::now()->format('Y/m/d') }}"
+                class="min-h-12 w-full cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 py-3 pe-11 ps-4 text-sm font-medium tabular-nums text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
             >
             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                 <i class="bi bi-calendar2-event text-base"></i>

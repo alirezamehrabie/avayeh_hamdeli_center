@@ -327,15 +327,16 @@
         @endif
 
         <div
+            x-cloak
             x-show="open"
             x-transition.opacity.duration.150ms
             @click="closeSelector()"
             class="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm sm:hidden"
-            style="display: none;"
             aria-hidden="true"
         ></div>
 
         <div
+            x-cloak
             x-show="open"
             x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
@@ -350,7 +351,6 @@
             role="dialog"
             aria-modal="true"
             aria-label="انتخاب مددکار"
-            style="display: none;"
         >
             <!-- Mobile drag handle pill -->
             <div class="mx-auto mb-2.5 h-1.5 w-12 shrink-0 rounded-full bg-slate-300 sm:hidden" aria-hidden="true"></div>
@@ -381,7 +381,7 @@
                         inputmode="search"
                         enterkeyhint="search"
                         @focus="$wire.openPredefinedGroupWorkerSearch({{ $groupIndex }})"
-                        class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }}"
+                        class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }} [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-ms-clear]:hidden"
                         placeholder="نام، کد مددکار یا موبایل"
                         autocomplete="off"
                     >
