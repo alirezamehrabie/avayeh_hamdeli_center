@@ -190,16 +190,18 @@
                 @click="openSelector()"
                 :aria-expanded="open.toString()"
                 aria-haspopup="dialog"
-                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"
+                class="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-cyan-200 bg-white px-2.5 py-1.5 text-xs font-bold text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"
                 aria-label="{{ $selectedService ? 'تغییر خدمت' : 'انتخاب خدمت' }}"
                 title="{{ $selectedService ? 'تغییر خدمت' : 'انتخاب خدمت' }}"
             >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <svg class="h-3.5 w-3.5 shrink-0 text-cyan-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M17 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M3 7h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     <path d="M7 21l-4-4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M21 17H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
+                <span class="hidden sm:inline">{{ $selectedService ? 'تغییر خدمت' : 'انتخاب خدمت' }}</span>
+                <span class="sm:hidden">{{ $selectedService ? 'تغییر' : 'انتخاب' }}</span>
             </button>
         @else
             <button

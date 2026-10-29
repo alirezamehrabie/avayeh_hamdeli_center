@@ -409,11 +409,30 @@
                 </div>
 
                 @if(! $selectedService)
-                    <div class="p-3 sm:p-4">
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
-                            <p class="text-sm font-black text-slate-500">۲. انتخاب مددکار و مقدارها</p>
-                            <p class="mt-1 text-xs font-bold leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید تا افزودن مددکار و ثبت مقدارها فعال شود.</p>
-                        </div>
+                    <div class="p-3 sm:p-5">
+                        <button
+                            type="button"
+                            @click="window.dispatchEvent(new CustomEvent('open-predefined-service-selector'))"
+                            class="group flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-cyan-200 bg-cyan-50/30 px-4 py-8 text-center transition hover:border-cyan-400 hover:bg-cyan-50/70 focus:outline-none focus:ring-4 focus:ring-cyan-100 active:scale-[0.99] sm:px-6 sm:py-10"
+                        >
+                            <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-600 shadow-sm shadow-cyan-600/10 transition duration-200 group-hover:scale-110 group-hover:bg-cyan-600 group-hover:text-white">
+                                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 7.5h16M7 12h10M9 16.5h6" />
+                                    <circle cx="18" cy="18" r="3" stroke-width="2"/>
+                                    <path d="m20.5 20.5 2 2" stroke-width="2"/>
+                                </svg>
+                            </span>
+                            <span class="mt-4 block text-base font-black text-slate-800 transition group-hover:text-cyan-950">
+                                انتخاب خدمت یا پویش
+                            </span>
+                            <span class="mt-1 block max-w-md text-xs font-semibold leading-5 text-slate-500">
+                                برای افزودن مددکاران و تخصیص سهمیه‌ها، ابتدا خدمت مورد نظر را از فهرست خدمات فعال انتخاب کنید.
+                            </span>
+                            <span class="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-600/20 transition group-hover:bg-cyan-700 group-active:scale-95">
+                                <i class="bi bi-search text-xs"></i>
+                                مشاهده و جستجوی خدمات
+                            </span>
+                        </button>
                     </div>
                 @else
                     <div
