@@ -39,7 +39,15 @@
         $isServiceDeliveryActive = request()->routeIs('social-worker.dashboard');
         $isAttendanceActive = request()->routeIs('social-worker.attendance');
         $isDeliveryHistoryActive = request()->routeIs('social-worker.delivery-history');
+        $isAnnouncementsActive = request()->routeIs('social-worker.announcements*');
         $isUserAccountActive = request()->routeIs('social-worker.user-account');
+
+        $unreadAnnouncementsCount = auth()->check()
+            ? \App\Models\MandatoryAnnouncementRecipient::query()
+                ->where('user_id', auth()->id())
+                ->whereNull('read_at')
+                ->count()
+            : 0;
     @endphp
 
     <nav class="flex-1 space-y-2">
@@ -65,6 +73,23 @@
             </svg>
             <span :class="nav && 'opacity-60'">تاریخچه تحویل</span>
             <x-sidebar.loading-dots x-show="nav" x-cloak class="mr-auto text-indigo-200" />
+        </a>
+
+        <a href="{{ route('social-worker.announcements') }}" x-data="{ nav: false }" @click="nav = true" @pageshow.window="if ($event.persisted) nav = false" class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isAnnouncementsActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
+            <div class="flex items-center">
+                <svg class="ml-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                </svg>
+                <span :class="nav && 'opacity-60'">صندوق پیام‌ها</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                @if($unreadAnnouncementsCount > 0)
+                    <span class="inline-flex items-center justify-center rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-black text-white shadow-sm tabular-nums" title="{{ $unreadAnnouncementsCount }} پیام خوانده‌نشده">
+                        {{ $unreadAnnouncementsCount }}
+                    </span>
+                @endif
+                <x-sidebar.loading-dots x-show="nav" x-cloak class="text-indigo-200" />
+            </div>
         </a>
 
         <a href="{{ route('social-worker.user-account') }}" x-data="{ nav: false }" @click="nav = true" @pageshow.window="if ($event.persisted) nav = false" class="flex items-center rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isUserAccountActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
