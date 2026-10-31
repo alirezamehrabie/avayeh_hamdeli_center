@@ -164,7 +164,7 @@
 
                     <div class="relative">
                         <div class="inline-flex items-center bg-gray-50 border border-gray-100 rounded-lg p-1 pl-3">
-                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-md font-bold ml-2 shadow-sm">اپراتور فعالیت</span>
+                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-md font-bold ml-2 shadow-sm">{{ auth()->user()->access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR ? 'اپراتور توزیع / فعالیت' : 'اپراتور فعالیت' }}</span>
                             <span class="text-xs font-semibold text-gray-700">{{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
                         </div>
                     </div>

@@ -156,6 +156,14 @@ class AppServiceProvider extends ServiceProvider
             return $user->canAccessActivityOperatorPanel();
         });
 
+        Gate::define('activity-attendance-register', function (User $user) {
+            return $user->hasActivityAttendanceAccess();
+        });
+
+        Gate::define('register-activity-attendance', function (User $user) {
+            return $user->hasActivityAttendanceAccess();
+        });
+
         Gate::define('view-distribution-operator-service', function (User $user, Service $service) {
             return $user->canAccessDistributionOperatorService($service);
         });

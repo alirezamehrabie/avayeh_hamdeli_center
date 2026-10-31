@@ -225,7 +225,9 @@
                                                     </span>
                                                 </div>
                                                 <div class="mt-3 text-xs text-slate-500">
-                                                    @if($access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
+                                                    @if($permissionKey === \App\Models\User::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER)
+                                                        دسترسی ثبت‌نام حضور و غیاب برای فعالیت‌های تعیین‌شده.
+                                                    @elseif($access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
                                                         دسترسی عملیاتی برای یکی از گیت‌های فرآیند توزیع.
                                                     @elseif($access_level === \App\Models\User::ACCESS_LEVEL_ACTIVITY_OPERATOR)
                                                         دسترسی ثبت‌نام حضور و غیاب برای فعالیت‌های تعیین‌شده.
@@ -640,7 +642,9 @@
                                                     </span>
                                                 </div>
                                                 <div class="mt-3 text-xs text-slate-500">
-                                                    @if($edit_access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
+                                                    @if($permissionKey === \App\Models\User::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER)
+                                                        دسترسی ثبت‌نام حضور و غیاب برای فعالیت‌های تعیین‌شده.
+                                                    @elseif($edit_access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
                                                         دسترسی عملیاتی برای یکی از گیت‌های فرآیند توزیع.
                                                     @elseif($edit_access_level === \App\Models\User::ACCESS_LEVEL_ACTIVITY_OPERATOR)
                                                         دسترسی ثبت‌نام حضور و غیاب برای فعالیت‌های تعیین‌شده.

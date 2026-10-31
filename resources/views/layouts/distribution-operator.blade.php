@@ -89,6 +89,7 @@
                         'active' => request()->routeIs('distribution-operator.gates.exit'),
                     ],
                 ];
+                $isActivityOperatorActive = request()->routeIs('activity-operator.*');
                 $isUserAccountActive = request()->routeIs('distribution-operator.user-account');
             @endphp
 
@@ -123,18 +124,17 @@
                     @endcan
                 @endforeach
 
-                {{-- حضور و غیاب موقتاً از پنل اپراتور توزیع مخفی شده است؛ برای بازگرداندن، بلوک @can('access-activity-operator-panel') زیر را از حالت کامنت خارج کنید --}}
-                {{-- @can('access-activity-operator-panel')
+                @can('access-activity-operator-panel')
                     <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 
                     <a
                         href="{{ route('activity-operator.dashboard') }}"
-                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-indigo-800 bg-blue-700"
+                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isActivityOperatorActive ? 'bg-indigo-700 text-white' : 'hover:bg-indigo-800 bg-blue-700 text-white shadow-sm' }}"
                     >
                         <span>حضور و غیاب</span>
                         <span class="text-xs text-indigo-100/80">فعالیت</span>
                     </a>
-                @endcan --}}
+                @endcan
 
                 <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 

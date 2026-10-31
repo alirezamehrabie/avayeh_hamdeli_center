@@ -210,6 +210,7 @@ class User extends Authenticatable
             self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER => [
                 'label' => 'ثبت‌نام حضور و غیاب فعالیت‌ها',
                 'group' => 'activity_operator',
+                'gate' => 'access-activity-operator-panel',
             ],
         ];
     }
