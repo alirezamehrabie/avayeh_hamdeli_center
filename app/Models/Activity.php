@@ -13,7 +13,7 @@ class Activity extends Model
     use SoftDeletes;
 
     public const STATUS_OPTIONS = [
-        'draft' => 'پیش نویس',
+        'draft' => 'پیش‌نویس',
         'ongoing' => 'آماده برگزاری',
         'closed' => 'بسته شده',
         'cancelled' => 'لغو شده',

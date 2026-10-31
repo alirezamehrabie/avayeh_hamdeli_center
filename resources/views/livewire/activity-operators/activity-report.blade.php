@@ -73,8 +73,16 @@
                     <div class="flex items-center justify-between px-6 py-4 hover:bg-slate-50">
                         <div>
                             <p class="font-bold text-slate-900">{{ $attendance->person->full_name }}</p>
-                            <p class="text-xs text-slate-600">{{ $attendance->person->person_code }} • ورود: {{ $attendance->checked_in_at?->format('Y/m/d H:i') ?? '—' }}</p>
-                            <p class="text-xs text-slate-600">خروج: {{ $attendance->checked_out_at?->format('Y/m/d H:i') ?? 'ثبت نشده' }}</p>
+                            <p class="text-xs text-slate-600">
+                                <span class="font-mono text-slate-500" dir="ltr">{{ $attendance->person->person_code }}</span>
+                                <span class="mx-1 text-slate-300">•</span>
+                                <span>ورود:</span>
+                                <span class="tabular-nums font-semibold" dir="ltr">{{ $attendance->checked_in_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($attendance->checked_in_at)->format('Y/m/d · H:i') : '—' }}</span>
+                            </p>
+                            <p class="text-xs text-slate-600">
+                                <span>خروج:</span>
+                                <span class="tabular-nums font-semibold" dir="ltr">{{ $attendance->checked_out_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($attendance->checked_out_at)->format('Y/m/d · H:i') : 'ثبت‌نشده' }}</span>
+                            </p>
                         </div>
                         <div class="flex flex-col items-end gap-1 text-right">
                             <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $attendance->status === 'present' ? 'bg-emerald-100 text-emerald-700' : ($attendance->status === 'late' ? 'bg-amber-100 text-amber-700' : ($attendance->status === 'absent' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700')) }}">

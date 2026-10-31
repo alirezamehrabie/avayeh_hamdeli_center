@@ -44,7 +44,10 @@
                         </span>
                     </div>
                     <p class="text-sm text-slate-600">📍 {{ $activity->location }}</p>
-                    <p class="mt-1 text-sm text-slate-600">🕐 {{ $activity->starts_at?->format('Y/m/d H:i') }}</p>
+                    <p class="mt-1 text-sm text-slate-600">
+                        <span class="tabular-nums" dir="ltr">{{ $activity->starts_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($activity->starts_at)->format('Y/m/d · H:i') : '-' }}</span>
+                        <span class="ms-1 text-xs text-slate-400">🕐</span>
+                    </p>
                     <div class="mt-3 flex gap-1 text-xs text-slate-600">
                         <span class="inline-flex rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">✓ {{ $activity->present_attendances_count ?? 0 }} حاضر</span>
                         <span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-slate-700">مجموع: {{ $activity->attendances_count ?? 0 }}</span>
