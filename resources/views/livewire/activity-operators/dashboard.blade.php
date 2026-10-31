@@ -17,6 +17,16 @@
             </p>
         </div>
         <div class="flex items-center gap-2 self-start sm:self-auto">
+            <button
+                type="button"
+                wire:click="$refresh"
+                wire:loading.attr="disabled"
+                class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm shadow-slate-900/[0.03] transition hover:border-slate-300 hover:bg-slate-50 active:scale-95 disabled:opacity-60"
+                title="به‌روزرسانی داده‌های پیشخوان"
+            >
+                <i class="bi bi-arrow-clockwise text-indigo-600 transition-transform" wire:loading.class="animate-spin"></i>
+                <span class="text-slate-600">به‌روزرسانی</span>
+            </button>
             <span class="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm shadow-slate-900/[0.03]">
                 <i class="bi bi-calendar3 text-indigo-600"></i>
                 <span class="text-slate-500">امروز:</span>
@@ -30,6 +40,11 @@
         @php
             $ongoingJalaliDate = $ongoingActivity->starts_at ? Jalalian::fromDateTime($ongoingActivity->starts_at)->format('Y/m/d') : null;
             $ongoingJalaliTime = $ongoingActivity->starts_at ? Jalalian::fromDateTime($ongoingActivity->starts_at)->format('H:i') : null;
+            $ongoingCapacity = $ongoingActivity->capacity;
+            $ongoingAttendees = $ongoingActivity->attendances_count ?? 0;
+            $ongoingPercentage = ($ongoingCapacity && $ongoingCapacity > 0)
+                ? min(100, (int) round(($ongoingAttendees / $ongoingCapacity) * 100))
+                : null;
         @endphp
         <div class="relative overflow-hidden rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-teal-500/10 p-4 sm:p-5 shadow-sm shadow-emerald-950/5">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -52,7 +67,7 @@
                         <h2 class="mt-1.5 text-base font-black text-slate-900 sm:text-lg truncate">
                             {{ $ongoingActivity->name }}
                         </h2>
-                        <div class="mt-1.5 flex flex-wrap items-center gap-3.5 text-xs text-slate-500">
+                        <div class="mt-2 flex flex-wrap items-center gap-3.5 text-xs text-slate-500">
                             @if($ongoingActivity->location)
                                 <span class="inline-flex items-center gap-1.5 text-slate-600">
                                     <i class="bi bi-geo-alt text-emerald-600"></i>
@@ -72,6 +87,18 @@
                                     <span class="tabular-nums font-bold text-slate-800" dir="ltr">{{ $ongoingJalaliDate }}</span>
                                 </span>
                             @endif
+                            <span class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white/80 px-2.5 py-1 text-xs font-bold text-emerald-900 shadow-sm">
+                                <i class="bi bi-people-fill text-emerald-600"></i>
+                                <span>حاضرین:</span>
+                                <span class="tabular-nums font-black" dir="ltr">{{ number_format($ongoingAttendees) }}</span>
+                                @if($ongoingCapacity && $ongoingCapacity > 0)
+                                    <span class="text-slate-400 font-normal">از</span>
+                                    <span class="tabular-nums text-slate-700" dir="ltr">{{ number_format($ongoingCapacity) }}</span>
+                                    <span class="text-[10px] font-semibold text-emerald-700">({{ $ongoingPercentage }}٪)</span>
+                                @else
+                                    <span class="text-[10px] font-normal text-slate-500">نفر</span>
+                                @endif
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -146,7 +173,7 @@
 
     <!-- Upcoming Activities List Card -->
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
-        <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/40 px-5 py-4 sm:px-6">
+        <div class="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div class="flex items-center gap-2.5">
                 <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 shadow-sm">
                     <i class="bi bi-list-task text-sm"></i>
@@ -158,13 +185,45 @@
                     </span>
                 </div>
             </div>
-            <a
-                href="{{ route('activity-operator.activity-list') }}"
-                class="group inline-flex items-center gap-1 text-xs font-bold text-indigo-600 transition hover:text-indigo-800"
-            >
-                <span>مشاهده همه</span>
-                <i class="bi bi-chevron-left text-[10px] transition-transform duration-200 group-hover:-translate-x-0.5"></i>
-            </a>
+
+            <!-- Filter Tabs / Pills for Operator Workflow -->
+            <div class="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+                <div class="inline-flex items-center rounded-xl bg-slate-200/60 p-1 text-xs">
+                    <button
+                        type="button"
+                        wire:click="setFilter('all')"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all {{ $filter === 'all' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}"
+                    >
+                        <span>همه</span>
+                        <span class="rounded-full px-1.5 py-0.5 text-[10px] tabular-nums {{ $filter === 'all' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-300/60 text-slate-600' }}">{{ $activeActivitiesCount }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="setFilter('ongoing')"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all {{ $filter === 'ongoing' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}"
+                    >
+                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <span>آماده برگزاری</span>
+                        <span class="rounded-full px-1.5 py-0.5 text-[10px] tabular-nums {{ $filter === 'ongoing' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-300/60 text-slate-600' }}">{{ $ongoingActivitiesCount }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="setFilter('today')"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-all {{ $filter === 'today' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}"
+                    >
+                        <span>امروز</span>
+                        <span class="rounded-full px-1.5 py-0.5 text-[10px] tabular-nums {{ $filter === 'today' ? 'bg-amber-50 text-amber-700' : 'bg-slate-300/60 text-slate-600' }}">{{ $todayActivitiesCount }}</span>
+                    </button>
+                </div>
+
+                <a
+                    href="{{ route('activity-operator.activity-list') }}"
+                    class="group inline-flex items-center gap-1 text-xs font-bold text-indigo-600 transition hover:text-indigo-800 pr-1"
+                >
+                    <span>فهرست کامل</span>
+                    <i class="bi bi-chevron-left text-[10px] transition-transform duration-200 group-hover:-translate-x-0.5"></i>
+                </a>
+            </div>
         </div>
 
         <div class="divide-y divide-slate-100">
@@ -188,6 +247,12 @@
                     };
                     $jalaliDate = $activity->starts_at ? Jalalian::fromDateTime($activity->starts_at)->format('Y/m/d') : null;
                     $jalaliTime = $activity->starts_at ? Jalalian::fromDateTime($activity->starts_at)->format('H:i') : null;
+
+                    $capacity = $activity->capacity;
+                    $attendees = $activity->attendances_count ?? 0;
+                    $hasCapacity = $capacity && $capacity > 0;
+                    $capacityPercentage = $hasCapacity ? min(100, (int) round(($attendees / $capacity) * 100)) : null;
+                    $isFull = $hasCapacity && $attendees >= $capacity;
                 @endphp
                 <div class="flex flex-col gap-3 p-4 transition-colors duration-150 hover:bg-indigo-50/20 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                     <div class="min-w-0 flex-1">
@@ -231,12 +296,34 @@
                                 </span>
                             @endif
 
-                            <span class="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 shadow-sm">
-                                <i class="bi bi-people text-slate-400"></i>
-                                <span>حاضرین:</span>
-                                <span class="font-bold tabular-nums text-slate-900" dir="ltr">{{ number_format($activity->attendances_count ?? 0) }}</span>
-                                <span class="text-[10px] text-slate-400">نفر</span>
-                            </span>
+                            <div class="inline-flex items-center gap-2 flex-wrap">
+                                <span class="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 shadow-sm">
+                                    <i class="bi bi-people text-slate-400"></i>
+                                    <span>حاضرین:</span>
+                                    <span class="font-bold tabular-nums text-slate-900" dir="ltr">{{ number_format($attendees) }}</span>
+                                    @if($hasCapacity)
+                                        <span class="text-slate-400 font-normal">از</span>
+                                        <span class="font-bold tabular-nums text-slate-700" dir="ltr">{{ number_format($capacity) }}</span>
+                                        <span class="text-[10px] font-bold {{ $isFull ? 'text-amber-600' : 'text-slate-500' }}">({{ $capacityPercentage }}٪)</span>
+                                    @else
+                                        <span class="text-[10px] text-slate-400">نفر</span>
+                                    @endif
+                                </span>
+
+                                @if($hasCapacity)
+                                    <div class="hidden sm:inline-flex items-center gap-1.5" title="درصد تکمیل ظرفیت: {{ $capacityPercentage }}٪">
+                                        <div class="h-1.5 w-16 overflow-hidden rounded-full bg-slate-100">
+                                            <div
+                                                class="h-full rounded-full transition-all duration-300 {{ $isFull ? 'bg-amber-500' : ($capacityPercentage > 80 ? 'bg-indigo-500' : 'bg-emerald-500') }}"
+                                                style="width: {{ $capacityPercentage }}%"
+                                            ></div>
+                                        </div>
+                                        @if($isFull)
+                                            <span class="rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">تکمیل</span>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
@@ -265,8 +352,34 @@
                     <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3 shadow-inner">
                         <i class="bi bi-calendar-x text-2xl"></i>
                     </span>
-                    <p class="text-sm font-bold text-slate-700">در حال حاضر هیچ فعالیتی در برنامه زمانی شما وجود ندارد</p>
-                    <p class="mt-1 text-xs text-slate-400">فعالیت‌های جدید پس از واگذاری توسط مدیریت در این بخش نمایش داده خواهند شد.</p>
+                    <p class="text-sm font-bold text-slate-700">
+                        @if($filter === 'ongoing')
+                            در حال حاضر هیچ فعالیتی با وضعیت آماده برگزاری وجود ندارد
+                        @elseif($filter === 'today')
+                            هیچ فعالیتی برای تاریخ امروز برنامه‌ریزی نشده است
+                        @else
+                            در حال حاضر هیچ فعالیتی در برنامه زمانی شما وجود ندارد
+                        @endif
+                    </p>
+                    <p class="mt-1 text-xs text-slate-400">
+                        @if($filter !== 'all')
+                            می‌توانید با انتخاب گزینه «همه»، تمام فعالیت‌های فعال را مشاهده کنید.
+                        @else
+                            فعالیت‌های جدید پس از واگذاری توسط مدیریت در این بخش نمایش داده خواهند شد.
+                        @endif
+                    </p>
+                    @if($filter !== 'all')
+                        <div class="mt-4">
+                            <button
+                                type="button"
+                                wire:click="setFilter('all')"
+                                class="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3.5 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+                            >
+                                <span>نمایش همه فعالیت‌ها</span>
+                                <i class="bi bi-arrow-left text-[11px]"></i>
+                            </button>
+                        </div>
+                    @endif
                 </div>
             @endforelse
         </div>

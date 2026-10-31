@@ -67,6 +67,7 @@
                 $isCheckInActive = request()->routeIs('activity-operator.check-in');
                 $isReportsActive = request()->routeIs('activity-operator.reports');
                 $isUserAccountActive = request()->routeIs('activity-operator.user-account');
+                $hasOngoingActivities = auth()->check() && auth()->user()->assignedActivities()->where('status', 'ongoing')->exists();
             @endphp
 
             <nav class="flex-1 space-y-2">
@@ -82,7 +83,15 @@
                     href="{{ route('activity-operator.activity-list') }}"
                     class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isActivityListActive || $isCheckInActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
                 >
-                    <span>فعالیت‌های من</span>
+                    <span class="flex items-center gap-2">
+                        <span>فعالیت‌های من</span>
+                        @if($hasOngoingActivities)
+                            <span class="relative flex h-2 w-2" title="فعالیت در حال برگزاری">
+                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+                            </span>
+                        @endif
+                    </span>
                     <span class="text-xs text-indigo-100/80">لیست</span>
                 </a>
 
