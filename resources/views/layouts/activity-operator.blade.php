@@ -165,6 +165,16 @@
         ></div>
 
         <div class="pwa-safe-top flex min-w-0 flex-1 flex-col overflow-y-auto">
+            @php
+                $userFullName = trim((string) (auth()->user()->first_name ?? '').' '.(string) (auth()->user()->last_name ?? ''));
+                if ($userFullName === '') {
+                    $userFullName = (string) (auth()->user()->name ?? 'کاربر');
+                }
+                $roleBadgeText = auth()->user()->access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR
+                    ? 'اپراتور توزیع / فعالیت'
+                    : 'اپراتور فعالیت';
+            @endphp
+
             <header class="flex items-center justify-between gap-4 border-b bg-white px-4 py-3 shadow-sm sm:px-6">
                 <div class="flex items-center gap-4">
                     <button
@@ -181,10 +191,14 @@
                         </svg>
                     </button>
 
-                    <div class="relative min-w-0">
-                        <div class="inline-flex items-center bg-gray-50 border border-gray-100 rounded-lg p-1 pl-2 sm:pl-3 max-w-[200px] sm:max-w-none truncate">
-                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-0.5 sm:py-1 rounded-md font-bold ml-1.5 sm:ml-2 shadow-sm shrink-0">{{ auth()->user()->access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR ? 'اپراتور توزیع / فعالیت' : 'اپراتور فعالیت' }}</span>
-                            <span class="text-xs font-semibold text-gray-700 truncate hidden xs:inline">{{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
+                    <div class="relative">
+                        <div class="inline-flex items-center rounded-xl border border-gray-200/80 bg-gray-50/80 p-1 pl-3 shadow-xs">
+                            <span class="ml-2 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
+                                {{ $roleBadgeText }}
+                            </span>
+                            <span class="text-xs font-bold text-gray-800">
+                                {{ $userFullName }}
+                            </span>
                         </div>
                     </div>
 

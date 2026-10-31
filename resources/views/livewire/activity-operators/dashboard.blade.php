@@ -29,7 +29,7 @@
             </button>
             <span class="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm shadow-slate-900/[0.03]">
                 <i class="bi bi-calendar3 text-indigo-600"></i>
-                <span class="text-slate-500 hidden xs:inline">امروز:</span>
+                <span class="text-slate-500 hidden sm:inline">امروز:</span>
                 <span class="tabular-nums font-black text-slate-900">{{ Jalalian::now()->format('l، d F Y') }}</span>
             </span>
         </div>
