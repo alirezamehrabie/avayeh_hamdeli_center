@@ -34,6 +34,16 @@
             class="fixed inset-y-0 right-0 z-40 flex w-64 shrink-0 flex-col overflow-y-auto bg-indigo-900 px-4 py-8 text-white shadow-2xl transition-all duration-300 lg:relative lg:z-auto lg:h-screen lg:shadow-none"
             style="display: none;"
         >
+            <!-- Mobile Close Button -->
+            <button
+                type="button"
+                @click="sidebarOpen = false"
+                class="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-800/60 text-indigo-200 transition hover:bg-indigo-700 hover:text-white lg:hidden"
+                aria-label="بستن منو"
+            >
+                <i class="bi bi-x-lg text-sm"></i>
+            </button>
+
             <div class="mb-8 border-b border-indigo-700/30 pb-0">
                 <div class="space-y-3 text-center">
                     <div class="flex justify-center">
@@ -171,10 +181,10 @@
                         </svg>
                     </button>
 
-                    <div class="relative">
-                        <div class="inline-flex items-center bg-gray-50 border border-gray-100 rounded-lg p-1 pl-3">
-                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-md font-bold ml-2 shadow-sm">{{ auth()->user()->access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR ? 'اپراتور توزیع / فعالیت' : 'اپراتور فعالیت' }}</span>
-                            <span class="text-xs font-semibold text-gray-700">{{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
+                    <div class="relative min-w-0">
+                        <div class="inline-flex items-center bg-gray-50 border border-gray-100 rounded-lg p-1 pl-2 sm:pl-3 max-w-[200px] sm:max-w-none truncate">
+                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-0.5 sm:py-1 rounded-md font-bold ml-1.5 sm:ml-2 shadow-sm shrink-0">{{ auth()->user()->access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR ? 'اپراتور توزیع / فعالیت' : 'اپراتور فعالیت' }}</span>
+                            <span class="text-xs font-semibold text-gray-700 truncate hidden xs:inline">{{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
                         </div>
                     </div>
 
@@ -182,7 +192,7 @@
 
                 <div class="flex items-center gap-3">
                     <div class="relative">
-                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white ring-2 ring-indigo-100 shadow-sm">
+                        <div class="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center overflow-hidden rounded-full bg-white ring-2 ring-indigo-100 shadow-sm">
                             @if (auth()->user()->profile_photo_path)
                                 <img
                                     src="{{ asset(auth()->user()->profile_photo_path) }}"
@@ -199,7 +209,7 @@
                 </div>
             </header>
 
-            <main class="min-w-0 flex-1 p-4 sm:p-6">
+            <main class="min-w-0 flex-1 p-3.5 sm:p-6">
                 {{ $slot }}
             </main>
         </div>
